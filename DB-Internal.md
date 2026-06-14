@@ -13,6 +13,7 @@ When you look at a table in a SQL client, you see something like this:
 
 That is a *logical* representation — it's how you think about it, not how the DB stores it. The DBMS never holds the table as a neat grid in memory. Instead, it carves up storage into fixed-size units called `data pages`, and each row physically lives inside one of those pages.Three regions inside every page:
 
+<img width="677" height="365" alt="Screenshot 2026-06-14 at 8 52 41 AM" src="https://github.com/user-attachments/assets/ec98b064-d87e-4c79-94c5-3eefc7366c8c" />
 
 
 **Header (96 bytes)** — metadata: the page number, how much free space is left, a checksum, and a few other housekeeping fields.
@@ -26,6 +27,9 @@ One table easily grows beyond what fits in a single 8 KB page, so the DBMS creat
 ## Part 2 — Where pages live: data blocks
 
 A `data page` is something the DBMS creates and manages. But the page itself has to live somewhere physical — on disk or SSD. That physical unit is a `data block`, and it is the smallest amount of data that a single I/O operation can read or write. Data blocks are owned by the underlying storage system, not by the DBMS.Key facts about blocks:
+
+<img width="719" height="370" alt="Screenshot 2026-06-14 at 8 52 59 AM" src="https://github.com/user-attachments/assets/4f42853c-9df3-451a-bedf-77a3c96b8f50" />
+
 
 - **Block size** ranges from 4 KB to 32 KB; 8 KB is most common.
 - If `block_size == page_size`, one block holds exactly one page. If `block_size > page_size` (say, a 16 KB block with 8 KB pages), one block can hold *multiple* pages.
@@ -56,6 +60,9 @@ An **M-order B-tree** has these rules:
 
 A 3-order B-tree (M = 3) therefore has at most **2 keys per node** and **3 pointers per node**.### Building a B-tree step by step
 
+<img width="694" height="259" alt="Screenshot 2026-06-14 at 8 54 00 AM" src="https://github.com/user-attachments/assets/d49ea35a-d549-4b73-9afd-86562c430a63" />
+
+
 The video walks through inserting `9, 33, 75, 41, 98, 214, 126, 55, 72` into a 3-order B-tree. Let me give you an interactive version so you can step through it yourself.The rule that drives all of this: **whenever a node would hold more than M − 1 keys after insertion, sort the keys, take the middle one, push it up to the parent, and split the remaining keys into a left and right child.** If the parent then overflows, the same rule cascades upward, possibly creating a brand new root. That's how the tree stays balanced — every leaf ends up at the same depth.
 
 ### B+ tree = B-tree plus two refinements
@@ -68,6 +75,9 @@ In a B+ tree (what relational DBs actually use):
 ## Part 5 — How the DBMS actually wires B+ tree to data pages
 
 This is where everything connects. The B+ tree's leaves don't store the row data themselves — they store the **indexed column value + a pointer to the data page that contains the actual row**.### What happens on INSERT — page splitting
+
+<img width="1472" height="880" alt="image" src="https://github.com/user-attachments/assets/76bf8786-2816-4ac2-95bb-673dfcb66327" />
+
 
 The video walks through inserting rows when the page size is just 3 (a teaching simplification). Let's follow it:
 
@@ -94,6 +104,9 @@ This is the punchline. There are two categories of index, distinguished by wheth
 
 Remember the offset array from Part 1? Here's its job. The rows inside a data page might be inserted in any order, but the offset array's slots are arranged so that following slot `0 → 1 → 2 → ...` walks the rows in **clustered-index order**. The physical bytes don't have to move when a new row is inserted in the middle — the DBMS just updates the offset entries.### Why only one clustered index per table
 
+<img width="1472" height="680" alt="image" src="https://github.com/user-attachments/assets/35952b86-c65b-46ba-bf66-1c03fee34e96" />
+
+
 You can only have one physical ordering of rows inside the pages. Pick `emp_id` as clustered and the offset arrays sort everything by `emp_id`. You can't also sort by `name` at the same time — that's a different order.
 
 The DBMS picks the clustered key in this priority:
@@ -116,6 +129,9 @@ This is the source of the "be careful with indexes" advice. Each non-clustered i
 ## Part 7 — Putting it all together: the search path
 
 When a query like `SELECT * FROM employee WHERE emp_id = 35` runs on an indexed column, here's the full chain:## The mental model in one paragraph
+
+<img width="1472" height="760" alt="image" src="https://github.com/user-attachments/assets/795c0466-c286-41ee-97c0-0c5678a60c17" />
+
 
 The DBMS owns logical units called **pages** (8 KB), each containing a header, a packed area of rows, and an offset array that imposes logical ordering. Pages map down to physical **blocks** on disk via a DBMS-maintained table. To search rows quickly, the DBMS builds a **B+ tree** on the indexed column, where internal nodes are pure routing signposts and leaf nodes store `(indexed_value → page_pointer)`. Exactly one index — the **clustered** one — determines the order of rows inside pages (enforced cheaply via the offset array); the primary key claims this role by default. Every other index is **non-clustered**: a separate B+ tree living in its own index pages, paid for in extra storage and extra write work on every mutation. A lookup walks: index pages → B+ tree traversal → data page identifier → data block identifier → physical read. That's how `O(n)` becomes `O(log n)`.
 
