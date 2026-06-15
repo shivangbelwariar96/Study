@@ -175,7 +175,11 @@ Issue tokens that expire in 5 or 10 minutes instead of days. Even a revoked-but-
 
 A token is valid only for a single use. After the first request that uses it, the token is marked consumed (typically via its `jti` in a cache) and any subsequent use is rejected.
 
-**Tradeoff**: combines well with short-lived tokens. The implementation requires storing `jti`s in a cache, so you're back to a lookup — but it's a strong guarantee.In practice, **approaches 3 and 4 are often combined**: short-lived tokens that can only be used once. The blacklist (approach 1) becomes the safety net for emergencies.
+**Tradeoff**: combines well with short-lived tokens. The implementation requires storing `jti`s in a cache, so you're back to a lookup — but it's a strong guarantee.
+
+<img width="1472" height="1080" alt="image" src="https://github.com/user-attachments/assets/444cbe5c-0da5-4af2-902d-f868f88352f1" />
+
+In practice, **approaches 3 and 4 are often combined**: short-lived tokens that can only be used once. The blacklist (approach 1) becomes the safety net for emergencies.
 
 ## Part 10 — Single sign-on (SSO) with JWT
 
