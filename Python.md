@@ -1,3633 +1,521 @@
-Below is the **final Python tutorial I would use if the goal is FAANG+ / staff-level DSA interview performance**, not general Python fluency.
+# Python for FAANG+ Staff Interviews
 
-The CS50P transcript is a strong Python foundation, but it teaches Python broadly: functions, variables, conditionals, loops, exceptions, libraries, tests, file I/O, regex, OOP, and advanced topics. For FAANG+ DSA, we compress that into the subset that actually wins coding rounds: **clean functions, correct data structures, algorithmic patterns, complexity analysis, edge cases, and communication.** 
+## Java Developer Edition: Python-Only Master Guide
 
-Official interview prep guidance from Amazon explicitly says interviewers are looking for your ability to **apply** computer science fundamentals efficiently, not memorize details; their listed technical topics include programming language, data structures, algorithms, coding, OOD, databases, and distributed computing. ([Amazon.jobs][1]) For senior/staff-like roles, Amazon’s SDE III guidance emphasizes leadership, system-wide thinking, high-performance scalable systems, and exemplary, maintainable, extensible code. ([Amazon.jobs][2]) So this tutorial is written for that bar.
+This is the final Python-focused guide for a Java developer using Python in
+FAANG+ coding interviews.
 
-# Python for FAANG+ DSA Interviews
-
-## 0. The Interview Mental Model
-
-In DSA interviews, Python is not the subject. Python is the weapon.
-
-Your real job is:
+This is not a DSA pattern bank. It intentionally avoids algorithm problem
+solutions and problem walkthroughs. Its job is narrower and more important:
 
 ```text
-Understand problem
-  -> choose correct pattern
-  -> choose correct data structure
-  -> prove correctness
-  -> write clean code
-  -> test edge cases
-  -> analyze time and space
-  -> discuss tradeoffs
+Make Python itself effortless.
+Prevent Python-specific bugs.
+Make your code look idiomatic under pressure.
+Give you the runtime, complexity, and internals language expected from a senior/staff engineer.
+Help you explain Python tradeoffs clearly in interviews.
 ```
 
-Staff-level expectation:
-
-```text
-Junior: can code a solution
-Mid-level: can code optimal solution
-Senior: can explain tradeoffs and edge cases
-Staff: can reason like a system owner under ambiguity
-```
-
-During a coding interview, your answer should sound like this:
-
-```text
-First I’ll clarify constraints.
-Then I’ll propose a brute-force solution.
-Then I’ll optimize using the key observation.
-The core invariant is...
-The algorithm is...
-The complexity is...
-Now I’ll code it.
-Finally I’ll test edge cases.
-```
-
-That is the framework.
+Target interview runtime: Python 3.10+ unless the platform says otherwise.
+Avoid brand-new version-specific features unless the judge explicitly supports
+them.
 
 ---
 
-# 1. Python You Actually Need
+## How to Read This Guide
 
-## 1.1 Variables and Types
+Callouts are used consistently:
 
-You need these types constantly:
+> **PITFALL:** A Python trap that can cause wrong answers, TLEs, crashes, or bad
+> explanations.
 
-```python
-int
-float
-str
-bool
-list
-tuple
-dict
-set
-None
-```
+> **JAVA DEV TRAP:** A habit that is natural in Java but harmful or noisy in
+> Python.
 
-Interview examples:
+> **TRICK:** A Python idiom that saves time without becoming clever.
 
-```python
-x = 10
-name = "abc"
-seen = set()
-freq = {}
-arr = [1, 2, 3]
-point = (2, 5)
-```
+> **INTERNAL:** CPython/runtime behavior worth knowing for staff-level
+> credibility.
 
-Use `None` for missing values:
+> **STAFF NOTE:** What a senior/staff interviewer is really listening for.
 
-```python
-prev = None
-```
-
-Use booleans directly:
-
-```python
-if not arr:
-    return 0
-```
-
-Do not write:
-
-```python
-if len(arr) == 0:
-    return 0
-```
-
-Both work, but the first is idiomatic.
+> **SAY THIS:** Interview-ready wording you can use out loud.
 
 ---
 
-## 1.2 Functions Are the Unit of Interview Code
+## Table of Contents
 
-Most platforms expect:
+1. [The Goal](#1-the-goal)
+2. [Python Version and Platform Reality](#2-python-version-and-platform-reality)
+3. [Java to Python Translation](#3-java-to-python-translation)
+4. [Core Language Semantics](#4-core-language-semantics)
+5. [Functions, Scope, and Closures](#5-functions-scope-and-closures)
+6. [Core Built-ins and Idioms](#6-core-built-ins-and-idioms)
+7. [Data Structures and Complexity](#7-data-structures-and-complexity)
+8. [Sorting, Comparison, and Ordering](#8-sorting-comparison-and-ordering)
+9. [Numbers, Math, and Precision](#9-numbers-math-and-precision)
+10. [Strings and Unicode](#10-strings-and-unicode)
+11. [Iteration, Generators, and Comprehensions](#11-iteration-generators-and-comprehensions)
+12. [Copying, Aliasing, and Mutability](#12-copying-aliasing-and-mutability)
+13. [Caching and Memoization Mechanics](#13-caching-and-memoization-mechanics)
+14. [Classes, Dataclasses, and Custom Objects](#14-classes-dataclasses-and-custom-objects)
+15. [CPython Internals That Matter](#15-cpython-internals-that-matter)
+16. [Performance and Memory Rules](#16-performance-and-memory-rules)
+17. [Production Python: OOP, Context Managers, Decorators, and Generators](#17-production-python-oop-context-managers-decorators-and-generators)
+18. [Concurrency: Threads, Locks, Processes, and Asyncio](#18-concurrency-threads-locks-processes-and-asyncio)
+19. [The Complete Pitfall Catalog](#19-the-complete-pitfall-catalog)
+20. [Staff-Level Python Communication](#20-staff-level-python-communication)
+21. [Final Cheat Sheets](#21-final-cheat-sheets)
+22. [Official References](#22-official-references)
 
-```python
-class Solution:
-    def twoSum(self, nums: list[int], target: int) -> list[int]:
-        ...
+---
+
+# 1. The Goal
+
+In the coding round, Python should disappear. The interviewer should see your
+problem-solving, not your struggle with syntax, copies, hashability, heaps,
+division, or recursion.
+
+Your Python code should be:
+
+```text
+short but not cryptic
+idiomatic but not clever
+explicit about invariants
+safe on edge cases
+accurate in complexity
+easy for a human to review
 ```
 
-But internally, think in small functions:
+## 1.1 Staff-Level Python Bar
+
+At staff level, the bar is not "can write Python syntax." The bar is:
+
+```text
+Can you choose the right Python data structure?
+Can you explain its cost model?
+Can you avoid hidden O(n) operations?
+Can you reason about mutability and aliasing?
+Can you communicate tradeoffs when constraints change?
+Can your code be read, debugged, and modified quickly?
+```
+
+> **STAFF NOTE:** In a staff coding round, clean and correct beats clever and
+> dense. Python gives you expressive tools. Use them to reduce bug surface, not
+> to show off.
+
+## 1.2 What This Guide Does Not Include
+
+This guide intentionally does not include:
+
+```text
+algorithm templates
+prewritten coding-problem answers
+DSA pattern walkthroughs
+problem lists
+DP recurrence libraries
+graph traversal solution code
+```
+
+Those are separate study materials. This document is your Python language,
+runtime, standard-library, and interview-execution reference.
+
+## 1.3 Complexity by Input Size
+
+This is not a problem-solving section, but you should know how interviewers use
+constraints to evaluate your Python choices:
+
+```text
+n <= 12        factorial or exhaustive search may be acceptable
+n <= 20        2^n style state spaces may be acceptable
+n <= 500       O(n^3) may be acceptable
+n <= 5,000     O(n^2) may be acceptable
+n <= 100,000   O(n log n) or O(n) is usually expected
+n >= 1,000,000 O(n) or better is usually needed
+```
+
+> **SAY THIS:** "Given n is around 100,000, I want to avoid Python-level O(n^2)
+> work and also avoid hidden O(n) operations like list front pops or repeated
+> slicing."
+
+---
+
+# 2. Python Version and Platform Reality
+
+## 2.1 Safe Baseline
+
+Assume Python 3.10+ for interviews unless told otherwise.
+
+Comfortable features:
 
 ```python
 def solve(nums: list[int]) -> int:
     ...
 ```
 
-A good function:
-
 ```python
-def max_subarray_sum(nums: list[int]) -> int:
-    best = curr = nums[0]
-
-    for x in nums[1:]:
-        curr = max(x, curr + x)
-        best = max(best, curr)
-
-    return best
+from functools import lru_cache
 ```
 
-A bad function:
-
 ```python
-def f(a):
-    x = 0
-    # unclear logic
+match value:
+    case 0:
+        ...
 ```
 
-For FAANG+ interviews, names matter. Use:
+That said, pattern matching is rarely necessary in coding interviews.
+
+> **TIP:** Use Python 3.10 type hints like `list[int]` if the platform supports
+> them. If uncertain, omit type hints or use `List[int]` from `typing`.
+
+## 2.2 Version-Sensitive Features
+
+| Feature | Version note | Interview guidance |
+|---|---:|---|
+| `list[int]` generic syntax | Python 3.9+ | Usually fine on modern judges |
+| `functools.cache` | Python 3.9+ | Use `lru_cache(None)` if unsure |
+| `match/case` | Python 3.10+ | Avoid unless it genuinely clarifies |
+| `bisect` `key=` | Python 3.10+ | Know behavior, but avoid if platform older |
+| `math.lcm` | Python 3.9+ | Easy to replace if unavailable |
+| `heapq` max-heap helpers | Python 3.14+ | Avoid in interviews unless confirmed |
+
+Python 3.14 added `heapq.heapify_max`, `heappush_max`,
+`heappop_max`, `heappushpop_max`, and `heapreplace_max`. Most interview
+platforms may not run 3.14 yet, so the safe max-heap idiom remains pushing
+negative numeric priorities.
+
+## 2.3 Third-Party Libraries
+
+Python's standard library does not include a `TreeMap`, `TreeSet`, or
+`SortedList`.
+
+Some platforms include:
 
 ```python
-left, right
-slow, fast
-start, end
-curr, best
-count, freq
-parent, rank
-graph, indegree
+from sortedcontainers import SortedList, SortedDict, SortedSet
 ```
+
+But availability is not universal.
+
+> **SAY THIS:** "In Java I would use `TreeMap`. In Python, if
+> `sortedcontainers` is available, `SortedList` or `SortedDict` is the closest
+> equivalent. If not, I would redesign around heaps, offline sorting, coordinate
+> compression, or another structure depending on the operation mix."
+
+> **PITFALL:** Do not assume `sortedcontainers` is available unless the
+> interviewer or platform confirms it.
 
 ---
 
-## 1.3 Loops
+# 3. Java to Python Translation
 
-Use `for` when you know the collection:
+## 3.1 Direct Translation Table
+
+| Java | Python | Interview note |
+|---|---|---|
+| `int`, `long` | `int` | Arbitrary precision, no overflow |
+| `double` | `float` | IEEE-style binary float, precision caveats |
+| `boolean` | `bool` | `True` / `False`, capitalized |
+| `null` | `None` | Compare with `is None` |
+| `String` | `str` | Immutable Unicode string |
+| `StringBuilder` | `list` + `"".join(parts)` | Avoid repeated `+=` |
+| `int[]` | `list[int]` | Dynamic array of object references |
+| `ArrayList<T>` | `list` | Append/pop-end are fast |
+| `HashMap<K,V>` | `dict` | Average O(1), insertion-ordered |
+| `HashSet<T>` | `set` | Average O(1) membership |
+| `ArrayDeque<T>` | `collections.deque` | O(1) both ends |
+| `PriorityQueue<T>` | `heapq` over `list` | Min-heap by default |
+| `LinkedHashMap` | `dict` / `OrderedDict` | Use `OrderedDict` for recency ops |
+| `TreeMap`, `TreeSet` | no stdlib equivalent | Confirm `sortedcontainers` or redesign |
+| `Pair<A,B>` | tuple `(a, b)` | Hashable if contents hashable |
+| `Comparator<T>` | `key=` or `cmp_to_key` | Prefer `key=` |
+| `this` | `self` | Explicit first method parameter |
+| `static final` constant | `UPPER_CASE` convention | Not enforced |
+| `a / b` integer division | `a // b` | But floors, does not truncate |
+| `&&`, `||`, `!` | `and`, `or`, `not` | Boolean operators are words |
+| `for (T x : xs)` | `for x in xs:` | Use `enumerate` for index |
+
+## 3.2 Java Habits to Drop
+
+> **JAVA DEV TRAP:** Do not create tiny classes for pairs. Use tuples unless the
+> object truly has behavior or named fields matter.
 
 ```python
-for x in nums:
-    ...
+cell = (row, col)
+row, col = cell
 ```
 
-Use `range` when you need indices:
+> **JAVA DEV TRAP:** Do not use index loops by default.
+
+Java-shaped:
 
 ```python
 for i in range(len(nums)):
+    x = nums[i]
+```
+
+More Pythonic when index is unnecessary:
+
+```python
+for x in nums:
     ...
 ```
 
-Use `enumerate` when you need both index and value:
+When both are needed:
 
 ```python
 for i, x in enumerate(nums):
     ...
 ```
 
-Use `while` for pointer movement:
+> **JAVA DEV TRAP:** Do not simulate `TreeMap` by maintaining a sorted list with
+> `bisect.insort` unless constraints are small. Insertion into a Python list is
+> O(n) because elements shift.
 
-```python
-left = 0
-right = len(nums) - 1
+> **JAVA DEV TRAP:** Do not assume recursion depth behaves like Java. CPython's
+> default recursion limit is around 1000.
 
-while left < right:
-    ...
+## 3.3 What Python Gives You That Java Does Not
+
+Python makes these lightweight:
+
+```text
+tuple packing/unpacking
+multiple assignment
+dictionary and set literals
+comprehensions
+first-class functions
+nested helper functions
+lexicographic tuple sorting
+arbitrary precision integers
+standard-library counters, deques, heaps, bisection, caching
 ```
 
-Use nested loops only when `O(n²)` is acceptable or unavoidable:
-
-```python
-for i in range(n):
-    for j in range(i + 1, n):
-        ...
-```
-
----
-
-## 1.4 Conditions
-
-Write direct conditions:
-
-```python
-if x in seen:
-    return True
-```
-
-Use chained comparisons:
-
-```python
-if 0 <= r < rows and 0 <= c < cols:
-    ...
-```
-
-Use early returns to reduce nesting:
-
-```python
-def is_valid(s: str) -> bool:
-    if not s:
-        return False
-
-    if len(s) < 3:
-        return False
-
-    return True
-```
-
-Avoid:
-
-```python
-def is_valid(s):
-    if s:
-        if len(s) >= 3:
-            return True
-        else:
-            return False
-    else:
-        return False
-```
+Use these to write less code with fewer moving parts.
 
 ---
 
-# 2. Python Data Structures: Interview Cheat Sheet
+# 4. Core Language Semantics
 
-Python’s `collections` module provides specialized containers like `deque`, `Counter`, and `defaultdict`, which are extremely common in DSA problems. The official docs describe `deque` as supporting fast appends and pops on both ends, `Counter` as a dict subclass for counting hashable objects, and `defaultdict` as a dict subclass that supplies missing values automatically. ([Python documentation][3])
+## 4.1 Names, Objects, and References
 
-## 2.1 `list`
+Python variables are names bound to objects.
 
-Use for:
-
-```text
-arrays
-stacks
-dynamic programming tables
-adjacency lists
-```
-
-Examples:
-
-```python
-arr = []
-arr.append(10)
-arr.pop()
-arr[-1]
-```
-
-Common operations:
-
-```python
-nums[i]          # access
-nums.append(x)   # push end
-nums.pop()       # pop end
-nums[::-1]       # reversed copy
-nums.sort()      # sort in place
-sorted(nums)     # sorted copy
-```
-
-Important:
-
-```python
-nums.pop(0)      # bad for queues
-nums.insert(0,x) # bad for front insertion
-```
-
-Python lists are array-backed; inserting or deleting near the front is expensive because elements must move. The Python time-complexity reference notes that list append and pop-last are constant time on average, while inserts and intermediate pops are linear. ([Python Wiki][4])
-
-Use a list as a stack:
-
-```python
-stack = []
-
-stack.append(x)
-top = stack[-1]
-stack.pop()
-```
-
----
-
-## 2.2 `dict`
-
-Use for:
-
-```text
-hash maps
-frequency maps
-index lookup
-memoization
-graph adjacency
-```
-
-Example:
-
-```python
-freq = {}
-
-for x in nums:
-    freq[x] = freq.get(x, 0) + 1
-```
-
-Membership:
-
-```python
-if x in freq:
-    ...
-```
-
-Index map:
-
-```python
-last_seen = {}
-
-for i, x in enumerate(nums):
-    last_seen[x] = i
-```
-
----
-
-## 2.3 `set`
-
-Use for:
-
-```text
-visited nodes
-duplicate detection
-O(1) average membership
-```
-
-Example:
-
-```python
-seen = set()
-
-for x in nums:
-    if x in seen:
-        return True
-    seen.add(x)
-
-return False
-```
-
-Graph visited:
-
-```python
-visited = set()
-
-def dfs(node):
-    if node in visited:
-        return
-    visited.add(node)
-```
-
----
-
-## 2.4 `tuple`
-
-Use for immutable coordinates or keys:
-
-```python
-cell = (r, c)
-visited.add((r, c))
-```
-
-You cannot put a list inside a set:
-
-```python
-visited.add([r, c])  # TypeError
-```
-
-Use tuple instead:
-
-```python
-visited.add((r, c))
-```
-
----
-
-## 2.5 `deque`
-
-Use for queues and BFS:
-
-```python
-from collections import deque
-
-q = deque()
-q.append(start)
-node = q.popleft()
-```
-
-Never use `list.pop(0)` for BFS.
-
-BFS template:
-
-```python
-from collections import deque
-
-def bfs(start):
-    q = deque([start])
-    visited = {start}
-
-    while q:
-        node = q.popleft()
-
-        for nei in graph[node]:
-            if nei not in visited:
-                visited.add(nei)
-                q.append(nei)
-```
-
----
-
-## 2.6 `Counter`
-
-Use for frequency counting:
-
-```python
-from collections import Counter
-
-freq = Counter(nums)
-```
-
-Example:
-
-```python
-from collections import Counter
-
-def is_anagram(s: str, t: str) -> bool:
-    return Counter(s) == Counter(t)
-```
-
-Manual version:
-
-```python
-def is_anagram(s: str, t: str) -> bool:
-    if len(s) != len(t):
-        return False
-
-    freq = {}
-
-    for ch in s:
-        freq[ch] = freq.get(ch, 0) + 1
-
-    for ch in t:
-        if ch not in freq:
-            return False
-        freq[ch] -= 1
-        if freq[ch] < 0:
-            return False
-
-    return True
-```
-
-For interviews, both are acceptable. If the interviewer wants fundamentals, explain the manual map.
-
----
-
-## 2.7 `defaultdict`
-
-Use for graph adjacency and grouping:
-
-```python
-from collections import defaultdict
-
-graph = defaultdict(list)
-
-for u, v in edges:
-    graph[u].append(v)
-    graph[v].append(u)
-```
-
-Frequency:
-
-```python
-from collections import defaultdict
-
-freq = defaultdict(int)
-
-for x in nums:
-    freq[x] += 1
-```
-
-Grouping anagrams:
-
-```python
-from collections import defaultdict
-
-def group_anagrams(words: list[str]) -> list[list[str]]:
-    groups = defaultdict(list)
-
-    for word in words:
-        key = tuple(sorted(word))
-        groups[key].append(word)
-
-    return list(groups.values())
-```
-
----
-
-## 2.8 `heapq`
-
-Python’s `heapq` module implements a heap / priority queue. The official docs state that Python’s heap is a min-heap where `heap[0]` is the smallest item, and `heapify` transforms a list into a heap in linear time. ([Python documentation][5])
-
-Basic usage:
-
-```python
-import heapq
-
-heap = []
-heapq.heappush(heap, 5)
-heapq.heappush(heap, 2)
-heapq.heappush(heap, 9)
-
-smallest = heapq.heappop(heap)  # 2
-```
-
-Max heap trick:
-
-```python
-heapq.heappush(heap, -x)
-largest = -heapq.heappop(heap)
-```
-
-Heap with pairs:
-
-```python
-heapq.heappush(heap, (distance, node))
-```
-
-Used for:
-
-```text
-top k
-merge k sorted lists
-Dijkstra
-scheduling
-median stream
-priority simulation
-```
-
----
-
-## 2.9 `bisect`
-
-The `bisect` module uses binary search to locate insertion points in sorted lists. The official docs describe it as support for maintaining a list in sorted order and locating insertion points. ([Python documentation][6])
-
-Usage:
-
-```python
-from bisect import bisect_left, bisect_right
-
-arr = [1, 2, 2, 2, 5]
-
-left = bisect_left(arr, 2)    # 1
-right = bisect_right(arr, 2)  # 4
-count = right - left          # 3
-```
-
-Use when:
-
-```text
-array is sorted
-you need count <= x
-you need first >= x
-you need first > x
-```
-
----
-
-## 2.10 `functools.cache`
-
-Use for memoized recursion / top-down DP.
-
-```python
-from functools import cache
-
-@cache
-def dp(i, j):
-    ...
-```
-
-The official `functools` docs describe `cache` as a lightweight unbounded function cache, equivalent to `lru_cache(maxsize=None)`. ([Python documentation][7])
-
-Example:
-
-```python
-from functools import cache
-
-def climb_stairs(n: int) -> int:
-    @cache
-    def dp(i: int) -> int:
-        if i <= 1:
-            return 1
-        return dp(i - 1) + dp(i - 2)
-
-    return dp(n)
-```
-
----
-
-# 3. Complexity: What You Must Be Able to Say
-
-Every solution needs:
-
-```text
-Time: how many operations?
-Space: extra memory beyond input?
-```
-
-Common complexities:
-
-```text
-O(1)        constant
-O(log n)    binary search
-O(n)        one pass
-O(n log n)  sorting
-O(n²)       pair checking / nested loops
-O(2^n)      subsets / brute-force recursion
-O(n!)       permutations
-```
-
-## Python-Specific Complexity You Must Know
-
-```text
-list append              O(1) amortized
-list pop last            O(1)
-list pop front           O(n)
-dict lookup              O(1) average
-set lookup               O(1) average
-sort                     O(n log n)
-heap push/pop            O(log n)
-BFS/DFS graph            O(V + E)
-```
-
-Say complexity precisely:
-
-```text
-Let n be the number of elements.
-We scan once and use a hash set, so time is O(n), space is O(n).
-```
-
-For grids:
-
-```text
-Let R be rows and C be columns.
-We visit each cell once, so time is O(RC), space is O(RC).
-```
-
-For graphs:
-
-```text
-Let V be vertices and E be edges.
-DFS/BFS is O(V + E).
-```
-
----
-
-# 4. Interview Execution Protocol
-
-Use this exact order.
-
-## Step 1: Clarify
-
-Ask:
-
-```text
-Can input be empty?
-Can values be negative?
-Are duplicates allowed?
-Should I return indices or values?
-Is the input sorted?
-Can I modify the input?
-What are the constraints?
-```
-
-## Step 2: Give Brute Force
-
-Example:
-
-```text
-Brute force checks every pair, O(n²). 
-We can optimize by using a hash map to remember complements.
-```
-
-## Step 3: State Key Observation
-
-Example:
-
-```text
-For each number x, I need target - x. 
-If I have seen target - x before, I found the pair.
-```
-
-## Step 4: Code Cleanly
-
-Do not rush.
-
-## Step 5: Test
-
-Use:
-
-```text
-normal case
-empty case
-single element
-duplicates
-negative numbers
-large case
-```
-
-## Step 6: Analyze Complexity
-
-Always finish with time and space.
-
----
-
-# 5. Core Pattern 1: Hash Map / Hash Set
-
-## Problem Type
-
-Use when you need:
-
-```text
-fast lookup
-duplicate detection
-frequency counting
-complement search
-grouping
-```
-
-## Template: Seen Set
-
-```python
-def contains_duplicate(nums: list[int]) -> bool:
-    seen = set()
-
-    for x in nums:
-        if x in seen:
-            return True
-        seen.add(x)
-
-    return False
-```
-
-Time: `O(n)`
-Space: `O(n)`
-
-## Template: Two Sum
-
-```python
-def two_sum(nums: list[int], target: int) -> list[int]:
-    seen = {}
-
-    for i, x in enumerate(nums):
-        need = target - x
-
-        if need in seen:
-            return [seen[need], i]
-
-        seen[x] = i
-
-    return []
-```
-
-Key invariant:
-
-```text
-Before processing index i, seen contains values from indices < i.
-```
-
-## Template: Frequency Map
-
-```python
-def first_unique_char(s: str) -> int:
-    freq = {}
-
-    for ch in s:
-        freq[ch] = freq.get(ch, 0) + 1
-
-    for i, ch in enumerate(s):
-        if freq[ch] == 1:
-            return i
-
-    return -1
-```
-
----
-
-# 6. Core Pattern 2: Two Pointers
-
-## Problem Type
-
-Use when:
-
-```text
-array/string is sorted
-you need pair/triplet
-you need remove/partition in place
-you need compare from both ends
-```
-
-## Template: Opposite Ends
-
-```python
-def two_sum_sorted(nums: list[int], target: int) -> list[int]:
-    left = 0
-    right = len(nums) - 1
-
-    while left < right:
-        total = nums[left] + nums[right]
-
-        if total == target:
-            return [left, right]
-        elif total < target:
-            left += 1
-        else:
-            right -= 1
-
-    return []
-```
-
-Why it works:
-
-```text
-If sum is too small, increasing left is the only useful move.
-If sum is too large, decreasing right is the only useful move.
-```
-
-## Template: Palindrome
-
-```python
-def is_palindrome(s: str) -> bool:
-    left = 0
-    right = len(s) - 1
-
-    while left < right:
-        if s[left] != s[right]:
-            return False
-
-        left += 1
-        right -= 1
-
-    return True
-```
-
-## Template: Remove Duplicates from Sorted Array
-
-```python
-def remove_duplicates(nums: list[int]) -> int:
-    if not nums:
-        return 0
-
-    write = 1
-
-    for read in range(1, len(nums)):
-        if nums[read] != nums[write - 1]:
-            nums[write] = nums[read]
-            write += 1
-
-    return write
-```
-
-Invariant:
-
-```text
-nums[:write] contains the unique elements seen so far.
-```
-
----
-
-# 7. Core Pattern 3: Sliding Window
-
-## Problem Type
-
-Use when:
-
-```text
-contiguous subarray
-contiguous substring
-longest/shortest window
-at most k
-exactly k
-sum/frequency inside a moving window
-```
-
-## Fixed Window
-
-Example: maximum sum of size `k`.
-
-```python
-def max_sum_k(nums: list[int], k: int) -> int:
-    window = sum(nums[:k])
-    best = window
-
-    for right in range(k, len(nums)):
-        window += nums[right]
-        window -= nums[right - k]
-        best = max(best, window)
-
-    return best
-```
-
-Time: `O(n)`
-Space: `O(1)`
-
-## Variable Window: Longest Substring Without Repeating Characters
-
-```python
-def length_of_longest_substring(s: str) -> int:
-    seen = set()
-    left = 0
-    best = 0
-
-    for right, ch in enumerate(s):
-        while ch in seen:
-            seen.remove(s[left])
-            left += 1
-
-        seen.add(ch)
-        best = max(best, right - left + 1)
-
-    return best
-```
-
-Invariant:
-
-```text
-The window s[left:right+1] always contains no duplicate characters.
-```
-
-## Variable Window: At Most K Distinct
-
-```python
-from collections import defaultdict
-
-def longest_at_most_k_distinct(s: str, k: int) -> int:
-    freq = defaultdict(int)
-    left = 0
-    best = 0
-
-    for right, ch in enumerate(s):
-        freq[ch] += 1
-
-        while len(freq) > k:
-            left_ch = s[left]
-            freq[left_ch] -= 1
-
-            if freq[left_ch] == 0:
-                del freq[left_ch]
-
-            left += 1
-
-        best = max(best, right - left + 1)
-
-    return best
-```
-
----
-
-# 8. Core Pattern 4: Prefix Sum
-
-## Problem Type
-
-Use when:
-
-```text
-subarray sum
-range sum
-number of subarrays with property
-convert O(n²) range calculation to O(n)
-```
-
-## Prefix Sum Basics
-
-```python
-prefix = [0]
-
-for x in nums:
-    prefix.append(prefix[-1] + x)
-```
-
-Range sum `nums[l:r+1]`:
-
-```python
-prefix[r + 1] - prefix[l]
-```
-
-## Subarray Sum Equals K
-
-```python
-from collections import defaultdict
-
-def subarray_sum(nums: list[int], k: int) -> int:
-    count = defaultdict(int)
-    count[0] = 1
-
-    prefix = 0
-    ans = 0
-
-    for x in nums:
-        prefix += x
-        ans += count[prefix - k]
-        count[prefix] += 1
-
-    return ans
-```
-
-Key observation:
-
-```text
-current_prefix - previous_prefix = k
-therefore previous_prefix = current_prefix - k
-```
-
-Time: `O(n)`
-Space: `O(n)`
-
----
-
-# 9. Core Pattern 5: Difference Array
-
-## Problem Type
-
-Use when:
-
-```text
-many range updates
-apply +x from l to r many times
-need final array
-```
-
-## Template
-
-```python
-def apply_range_updates(n: int, updates: list[tuple[int, int, int]]) -> list[int]:
-    diff = [0] * (n + 1)
-
-    for left, right, val in updates:
-        diff[left] += val
-        if right + 1 < n:
-            diff[right + 1] -= val
-
-    arr = [0] * n
-    curr = 0
-
-    for i in range(n):
-        curr += diff[i]
-        arr[i] = curr
-
-    return arr
-```
-
-Instead of updating every element in `[l, r]`, mark only boundaries.
-
----
-
-# 10. Core Pattern 6: Binary Search
-
-## Problem Type
-
-Use when:
-
-```text
-sorted array
-monotonic condition
-minimum feasible answer
-maximum feasible answer
-```
-
-## Basic Binary Search
-
-```python
-def binary_search(nums: list[int], target: int) -> int:
-    left = 0
-    right = len(nums) - 1
-
-    while left <= right:
-        mid = (left + right) // 2
-
-        if nums[mid] == target:
-            return mid
-        elif nums[mid] < target:
-            left = mid + 1
-        else:
-            right = mid - 1
-
-    return -1
-```
-
-## Lower Bound: First Index Where `nums[i] >= target`
-
-```python
-def lower_bound(nums: list[int], target: int) -> int:
-    left = 0
-    right = len(nums)
-
-    while left < right:
-        mid = (left + right) // 2
-
-        if nums[mid] < target:
-            left = mid + 1
-        else:
-            right = mid
-
-    return left
-```
-
-This is the one you should master.
-
-## Binary Search on Answer
-
-Use when answer space is numeric and feasibility is monotonic.
-
-Example pattern:
-
-```python
-def minimize_answer(nums: list[int]) -> int:
-    def feasible(x: int) -> bool:
-        # return True if answer x works
-        ...
-
-    left = min_possible
-    right = max_possible
-
-    while left < right:
-        mid = (left + right) // 2
-
-        if feasible(mid):
-            right = mid
-        else:
-            left = mid + 1
-
-    return left
-```
-
-Examples:
-
-```text
-Koko Eating Bananas
-Capacity to Ship Packages
-Split Array Largest Sum
-Minimum Days to Make Bouquets
-```
-
-Interview phrase:
-
-```text
-The feasibility function is monotonic: if capacity x works, any larger capacity also works.
-```
-
----
-
-# 11. Core Pattern 7: Sorting
-
-## Problem Type
-
-Use sorting when:
-
-```text
-order matters
-intervals
-greedy choice
-deduplicate/group
-two pointers after sorting
-```
-
-Python:
-
-```python
-nums.sort()
-```
-
-or:
-
-```python
-arr = sorted(nums)
-```
-
-Sort by key:
-
-```python
-intervals.sort(key=lambda x: x[0])
-```
-
-Sort descending:
-
-```python
-nums.sort(reverse=True)
-```
-
-Sort tuple naturally:
-
-```python
-pairs.sort()
-```
-
-This sorts by first element, then second.
-
-## Merge Intervals
-
-```python
-def merge(intervals: list[list[int]]) -> list[list[int]]:
-    intervals.sort(key=lambda x: x[0])
-
-    merged = []
-
-    for start, end in intervals:
-        if not merged or start > merged[-1][1]:
-            merged.append([start, end])
-        else:
-            merged[-1][1] = max(merged[-1][1], end)
-
-    return merged
-```
-
-Invariant:
-
-```text
-merged contains non-overlapping intervals sorted by start.
-```
-
-Time: `O(n log n)` due to sorting.
-Space: `O(n)` for output.
-
----
-
-# 12. Core Pattern 8: Stack
-
-## Problem Type
-
-Use stack when:
-
-```text
-matching parentheses
-undo/backtracking
-monotonic next greater/smaller
-path simplification
-nested structures
-```
-
-## Valid Parentheses
-
-```python
-def is_valid_parentheses(s: str) -> bool:
-    stack = []
-    pairs = {
-        ")": "(",
-        "]": "[",
-        "}": "{",
-    }
-
-    for ch in s:
-        if ch in pairs.values():
-            stack.append(ch)
-        else:
-            if not stack or stack[-1] != pairs[ch]:
-                return False
-            stack.pop()
-
-    return not stack
-```
-
-Better version avoiding `pairs.values()` each time:
-
-```python
-def is_valid_parentheses(s: str) -> bool:
-    stack = []
-    closing_to_opening = {
-        ")": "(",
-        "]": "[",
-        "}": "{",
-    }
-
-    openings = set(closing_to_opening.values())
-
-    for ch in s:
-        if ch in openings:
-            stack.append(ch)
-        else:
-            if not stack:
-                return False
-
-            if stack.pop() != closing_to_opening[ch]:
-                return False
-
-    return not stack
-```
-
----
-
-# 13. Core Pattern 9: Monotonic Stack
-
-## Problem Type
-
-Use when:
-
-```text
-next greater element
-next smaller element
-stock span
-daily temperatures
-largest rectangle
-remove digits
-```
-
-## Next Greater Element
-
-```python
-def next_greater(nums: list[int]) -> list[int]:
-    ans = [-1] * len(nums)
-    stack = []  # indices
-
-    for i, x in enumerate(nums):
-        while stack and nums[stack[-1]] < x:
-            idx = stack.pop()
-            ans[idx] = x
-
-        stack.append(i)
-
-    return ans
-```
-
-Invariant:
-
-```text
-Stack stores indices whose next greater element has not been found yet.
-Values on stack are decreasing.
-```
-
-## Daily Temperatures
-
-```python
-def daily_temperatures(temperatures: list[int]) -> list[int]:
-    ans = [0] * len(temperatures)
-    stack = []
-
-    for i, temp in enumerate(temperatures):
-        while stack and temperatures[stack[-1]] < temp:
-            prev = stack.pop()
-            ans[prev] = i - prev
-
-        stack.append(i)
-
-    return ans
-```
-
-Time: `O(n)` because each index enters and leaves stack once.
-
----
-
-# 14. Core Pattern 10: Queue / BFS
-
-## Problem Type
-
-Use BFS when:
-
-```text
-shortest path in unweighted graph
-level order traversal
-minimum number of moves
-grid spread/infection
-```
-
-## Binary Tree Level Order
-
-```python
-from collections import deque
-
-def level_order(root):
-    if not root:
-        return []
-
-    ans = []
-    q = deque([root])
-
-    while q:
-        level = []
-
-        for _ in range(len(q)):
-            node = q.popleft()
-            level.append(node.val)
-
-            if node.left:
-                q.append(node.left)
-            if node.right:
-                q.append(node.right)
-
-        ans.append(level)
-
-    return ans
-```
-
-## Grid BFS
-
-```python
-from collections import deque
-
-def shortest_path_grid(grid: list[list[int]]) -> int:
-    rows = len(grid)
-    cols = len(grid[0])
-
-    if grid[0][0] == 1:
-        return -1
-
-    q = deque([(0, 0, 0)])  # row, col, distance
-    visited = {(0, 0)}
-
-    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-
-    while q:
-        r, c, dist = q.popleft()
-
-        if r == rows - 1 and c == cols - 1:
-            return dist
-
-        for dr, dc in directions:
-            nr = r + dr
-            nc = c + dc
-
-            if (
-                0 <= nr < rows
-                and 0 <= nc < cols
-                and grid[nr][nc] == 0
-                and (nr, nc) not in visited
-            ):
-                visited.add((nr, nc))
-                q.append((nr, nc, dist + 1))
-
-    return -1
-```
-
-For 8-direction movement:
-
-```python
-directions = [
-    (1, 0), (-1, 0), (0, 1), (0, -1),
-    (1, 1), (1, -1), (-1, 1), (-1, -1),
-]
-```
-
----
-
-# 15. Core Pattern 11: DFS
-
-## Problem Type
-
-Use DFS when:
-
-```text
-connected components
-islands
-tree recursion
-cycle detection
-backtracking
-topological sort
-```
-
-## Recursive DFS Graph
-
-```python
-def dfs(node):
-    if node in visited:
-        return
-
-    visited.add(node)
-
-    for nei in graph[node]:
-        dfs(nei)
-```
-
-## Iterative DFS
-
-```python
-def dfs_iterative(start):
-    stack = [start]
-    visited = set()
-
-    while stack:
-        node = stack.pop()
-
-        if node in visited:
-            continue
-
-        visited.add(node)
-
-        for nei in graph[node]:
-            if nei not in visited:
-                stack.append(nei)
-```
-
-## Number of Islands
-
-```python
-def num_islands(grid: list[list[str]]) -> int:
-    rows = len(grid)
-    cols = len(grid[0])
-    count = 0
-
-    def dfs(r: int, c: int) -> None:
-        if (
-            r < 0
-            or r >= rows
-            or c < 0
-            or c >= cols
-            or grid[r][c] != "1"
-        ):
-            return
-
-        grid[r][c] = "0"
-
-        dfs(r + 1, c)
-        dfs(r - 1, c)
-        dfs(r, c + 1)
-        dfs(r, c - 1)
-
-    for r in range(rows):
-        for c in range(cols):
-            if grid[r][c] == "1":
-                count += 1
-                dfs(r, c)
-
-    return count
-```
-
-Time: `O(RC)`
-Space: `O(RC)` worst-case recursion stack.
-
-Python has a recursion limit to prevent infinite recursion from overflowing the interpreter stack; the official `sys` docs explain that `getrecursionlimit()` returns the current limit, and `setrecursionlimit()` can change it but should be used carefully because too-high limits can crash the interpreter. ([Python documentation][8])
-
-In interviews, prefer recursion for clarity unless input size risks recursion depth.
-
----
-
-# 16. Core Pattern 12: Trees
-
-## Tree Node
-
-Usually provided:
-
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val
-        self.left = left
-        self.right = right
-```
-
-## DFS Traversals
-
-Inorder:
-
-```python
-def inorder(root):
-    if not root:
-        return []
-
-    return inorder(root.left) + [root.val] + inorder(root.right)
-```
-
-Better for large trees:
-
-```python
-def inorder(root):
-    ans = []
-
-    def dfs(node):
-        if not node:
-            return
-
-        dfs(node.left)
-        ans.append(node.val)
-        dfs(node.right)
-
-    dfs(root)
-    return ans
-```
-
-Preorder:
-
-```python
-def preorder(root):
-    ans = []
-
-    def dfs(node):
-        if not node:
-            return
-
-        ans.append(node.val)
-        dfs(node.left)
-        dfs(node.right)
-
-    dfs(root)
-    return ans
-```
-
-Postorder:
-
-```python
-def postorder(root):
-    ans = []
-
-    def dfs(node):
-        if not node:
-            return
-
-        dfs(node.left)
-        dfs(node.right)
-        ans.append(node.val)
-
-    dfs(root)
-    return ans
-```
-
-## Maximum Depth
-
-```python
-def max_depth(root) -> int:
-    if not root:
-        return 0
-
-    return 1 + max(max_depth(root.left), max_depth(root.right))
-```
-
-## Balanced Binary Tree
-
-```python
-def is_balanced(root) -> bool:
-    def height(node):
-        if not node:
-            return 0
-
-        left = height(node.left)
-        if left == -1:
-            return -1
-
-        right = height(node.right)
-        if right == -1:
-            return -1
-
-        if abs(left - right) > 1:
-            return -1
-
-        return 1 + max(left, right)
-
-    return height(root) != -1
-```
-
-Staff-level explanation:
-
-```text
-Instead of computing height repeatedly, each subtree returns either its height or -1 if already unbalanced.
-```
-
----
-
-# 17. Core Pattern 13: Binary Search Trees
-
-BST property:
-
-```text
-left subtree values < node.val < right subtree values
-```
-
-## Validate BST
-
-```python
-def is_valid_bst(root) -> bool:
-    def dfs(node, low, high):
-        if not node:
-            return True
-
-        if not (low < node.val < high):
-            return False
-
-        return (
-            dfs(node.left, low, node.val)
-            and dfs(node.right, node.val, high)
-        )
-
-    return dfs(root, float("-inf"), float("inf"))
-```
-
-Do not only compare node with direct children. That misses deep violations.
-
-## Lowest Common Ancestor in BST
-
-```python
-def lowest_common_ancestor(root, p, q):
-    curr = root
-
-    while curr:
-        if p.val < curr.val and q.val < curr.val:
-            curr = curr.left
-        elif p.val > curr.val and q.val > curr.val:
-            curr = curr.right
-        else:
-            return curr
-```
-
----
-
-# 18. Core Pattern 14: Linked Lists
-
-## Node
-
-Usually provided:
-
-```python
-class ListNode:
-    def __init__(self, val=0, next=None):
-        self.val = val
-        self.next = next
-```
-
-## Reverse Linked List
-
-```python
-def reverse_list(head):
-    prev = None
-    curr = head
-
-    while curr:
-        nxt = curr.next
-        curr.next = prev
-        prev = curr
-        curr = nxt
-
-    return prev
-```
-
-Invariant:
-
-```text
-prev is the reversed part.
-curr is the remaining unreversed part.
-```
-
-## Detect Cycle
-
-```python
-def has_cycle(head) -> bool:
-    slow = head
-    fast = head
-
-    while fast and fast.next:
-        slow = slow.next
-        fast = fast.next.next
-
-        if slow is fast:
-            return True
-
-    return False
-```
-
-Use `is`, not `==`, because you compare node identity.
-
-## Merge Two Sorted Lists
-
-```python
-def merge_two_lists(l1, l2):
-    dummy = ListNode()
-    tail = dummy
-
-    while l1 and l2:
-        if l1.val <= l2.val:
-            tail.next = l1
-            l1 = l1.next
-        else:
-            tail.next = l2
-            l2 = l2.next
-
-        tail = tail.next
-
-    tail.next = l1 or l2
-
-    return dummy.next
-```
-
-Dummy nodes reduce edge-case bugs.
-
----
-
-# 19. Core Pattern 15: Heap / Priority Queue
-
-## Top K Frequent Elements
-
-```python
-from collections import Counter
-import heapq
-
-def top_k_frequent(nums: list[int], k: int) -> list[int]:
-    freq = Counter(nums)
-    heap = []
-
-    for num, count in freq.items():
-        heapq.heappush(heap, (count, num))
-
-        if len(heap) > k:
-            heapq.heappop(heap)
-
-    return [num for count, num in heap]
-```
-
-Time: `O(n log k)`
-Space: `O(n)` for frequency map, `O(k)` heap.
-
-## Kth Largest
-
-```python
-import heapq
-
-def kth_largest(nums: list[int], k: int) -> int:
-    heap = []
-
-    for x in nums:
-        heapq.heappush(heap, x)
-
-        if len(heap) > k:
-            heapq.heappop(heap)
-
-    return heap[0]
-```
-
-Why min-heap?
-
-```text
-Keep only k largest elements.
-The smallest among those k is the kth largest overall.
-```
-
-## Merge K Sorted Lists
-
-```python
-import heapq
-
-def merge_k_lists(lists):
-    heap = []
-
-    for i, node in enumerate(lists):
-        if node:
-            heapq.heappush(heap, (node.val, i, node))
-
-    dummy = ListNode()
-    tail = dummy
-
-    while heap:
-        _, i, node = heapq.heappop(heap)
-
-        tail.next = node
-        tail = tail.next
-
-        if node.next:
-            heapq.heappush(heap, (node.next.val, i, node.next))
-
-    return dummy.next
-```
-
-Use `(value, i, node)` so Python does not try to compare `ListNode` objects when values tie.
-
----
-
-# 20. Core Pattern 16: Greedy
-
-## Problem Type
-
-Use greedy when:
-
-```text
-local optimal choice leads to global optimum
-sorting enables choice
-interval scheduling
-jump game
-minimum arrows
-gas station
-```
-
-Greedy needs proof. Do not just say “greedy works.”
-
-## Jump Game
-
-```python
-def can_jump(nums: list[int]) -> bool:
-    farthest = 0
-
-    for i, jump in enumerate(nums):
-        if i > farthest:
-            return False
-
-        farthest = max(farthest, i + jump)
-
-    return True
-```
-
-Invariant:
-
-```text
-farthest is the farthest index reachable after scanning positions up to i.
-```
-
-## Non-overlapping Intervals
-
-```python
-def erase_overlap_intervals(intervals: list[list[int]]) -> int:
-    intervals.sort(key=lambda x: x[1])
-
-    removed = 0
-    prev_end = float("-inf")
-
-    for start, end in intervals:
-        if start >= prev_end:
-            prev_end = end
-        else:
-            removed += 1
-
-    return removed
-```
-
-Greedy choice:
-
-```text
-Keep the interval with the earliest end because it leaves maximum room for future intervals.
-```
-
----
-
-# 21. Core Pattern 17: Backtracking
-
-## Problem Type
-
-Use when:
-
-```text
-generate all combinations
-generate all permutations
-subsets
-valid parentheses
-word search
-N queens
-constraint satisfaction
-```
-
-## Backtracking Template
-
-```python
-def backtrack(path, choices):
-    if is_complete(path):
-        ans.append(path.copy())
-        return
-
-    for choice in choices:
-        if not valid(choice):
-            continue
-
-        path.append(choice)
-        backtrack(path, choices)
-        path.pop()
-```
-
-The three operations:
-
-```text
-choose
-explore
-unchoose
-```
-
-## Subsets
-
-```python
-def subsets(nums: list[int]) -> list[list[int]]:
-    ans = []
-    path = []
-
-    def backtrack(i: int) -> None:
-        if i == len(nums):
-            ans.append(path.copy())
-            return
-
-        path.append(nums[i])
-        backtrack(i + 1)
-        path.pop()
-
-        backtrack(i + 1)
-
-    backtrack(0)
-    return ans
-```
-
-Time: `O(n * 2^n)` because there are `2^n` subsets and copying each path can cost `O(n)`.
-
-## Permutations
-
-```python
-def permute(nums: list[int]) -> list[list[int]]:
-    ans = []
-    path = []
-    used = [False] * len(nums)
-
-    def backtrack():
-        if len(path) == len(nums):
-            ans.append(path.copy())
-            return
-
-        for i in range(len(nums)):
-            if used[i]:
-                continue
-
-            used[i] = True
-            path.append(nums[i])
-
-            backtrack()
-
-            path.pop()
-            used[i] = False
-
-    backtrack()
-    return ans
-```
-
-## Combination Sum
-
-```python
-def combination_sum(candidates: list[int], target: int) -> list[list[int]]:
-    ans = []
-    path = []
-
-    def backtrack(start: int, remaining: int) -> None:
-        if remaining == 0:
-            ans.append(path.copy())
-            return
-
-        if remaining < 0:
-            return
-
-        for i in range(start, len(candidates)):
-            path.append(candidates[i])
-            backtrack(i, remaining - candidates[i])
-            path.pop()
-
-    backtrack(0, target)
-    return ans
-```
-
-Use `i` again when reuse is allowed. Use `i + 1` when reuse is not allowed.
-
----
-
-# 22. Core Pattern 18: Dynamic Programming
-
-DP is just caching repeated subproblems.
-
-Use DP when:
-
-```text
-optimal substructure
-overlapping subproblems
-count ways
-min/max cost
-choose or skip
-sequence alignment
-grid paths
-knapsack-like decisions
-```
-
-## DP Thinking Formula
-
-```text
-State:
-    What variables uniquely define a subproblem?
-
-Transition:
-    How does this state depend on smaller states?
-
-Base case:
-    What is the smallest known answer?
-
-Order:
-    In what order can states be computed?
-
-Answer:
-    Which state contains the final answer?
-```
-
-## Fibonacci / Climbing Stairs
-
-Top-down:
-
-```python
-from functools import cache
-
-def climb_stairs(n: int) -> int:
-    @cache
-    def dp(i: int) -> int:
-        if i <= 1:
-            return 1
-
-        return dp(i - 1) + dp(i - 2)
-
-    return dp(n)
-```
-
-Bottom-up:
-
-```python
-def climb_stairs(n: int) -> int:
-    if n <= 1:
-        return 1
-
-    prev2 = 1
-    prev1 = 1
-
-    for _ in range(2, n + 1):
-        curr = prev1 + prev2
-        prev2 = prev1
-        prev1 = curr
-
-    return prev1
-```
-
-## House Robber
-
-State:
-
-```text
-dp[i] = max money from houses up to i
-```
-
-Transition:
-
-```text
-dp[i] = max(dp[i - 1], dp[i - 2] + nums[i])
-```
-
-Optimized code:
-
-```python
-def rob(nums: list[int]) -> int:
-    prev2 = 0
-    prev1 = 0
-
-    for x in nums:
-        curr = max(prev1, prev2 + x)
-        prev2 = prev1
-        prev1 = curr
-
-    return prev1
-```
-
-## Coin Change
-
-```python
-def coin_change(coins: list[int], amount: int) -> int:
-    INF = amount + 1
-    dp = [INF] * (amount + 1)
-    dp[0] = 0
-
-    for total in range(1, amount + 1):
-        for coin in coins:
-            if total - coin >= 0:
-                dp[total] = min(dp[total], dp[total - coin] + 1)
-
-    return dp[amount] if dp[amount] != INF else -1
-```
-
-## Longest Increasing Subsequence: `O(n²)`
-
-```python
-def length_of_lis(nums: list[int]) -> int:
-    dp = [1] * len(nums)
-
-    for i in range(len(nums)):
-        for j in range(i):
-            if nums[j] < nums[i]:
-                dp[i] = max(dp[i], dp[j] + 1)
-
-    return max(dp)
-```
-
-## Longest Increasing Subsequence: `O(n log n)`
-
-```python
-from bisect import bisect_left
-
-def length_of_lis(nums: list[int]) -> int:
-    tails = []
-
-    for x in nums:
-        i = bisect_left(tails, x)
-
-        if i == len(tails):
-            tails.append(x)
-        else:
-            tails[i] = x
-
-    return len(tails)
-```
-
-Interpretation:
-
-```text
-tails[i] is the smallest possible tail value of an increasing subsequence of length i + 1.
-```
-
----
-
-# 23. Core Pattern 19: Graphs
-
-## Graph Representations
-
-Edge list:
-
-```python
-edges = [[0, 1], [1, 2]]
-```
-
-Adjacency list:
-
-```python
-from collections import defaultdict
-
-graph = defaultdict(list)
-
-for u, v in edges:
-    graph[u].append(v)
-    graph[v].append(u)
-```
-
-Directed graph:
-
-```python
-graph[u].append(v)
-```
-
-Weighted graph:
-
-```python
-graph[u].append((v, weight))
-```
-
----
-
-## Connected Components
-
-```python
-def count_components(n: int, edges: list[list[int]]) -> int:
-    graph = [[] for _ in range(n)]
-
-    for u, v in edges:
-        graph[u].append(v)
-        graph[v].append(u)
-
-    visited = set()
-
-    def dfs(node: int) -> None:
-        visited.add(node)
-
-        for nei in graph[node]:
-            if nei not in visited:
-                dfs(nei)
-
-    count = 0
-
-    for node in range(n):
-        if node not in visited:
-            count += 1
-            dfs(node)
-
-    return count
-```
-
----
-
-## Cycle Detection in Directed Graph
-
-```python
-def has_cycle_directed(n: int, edges: list[list[int]]) -> bool:
-    graph = [[] for _ in range(n)]
-
-    for u, v in edges:
-        graph[u].append(v)
-
-    visiting = set()
-    visited = set()
-
-    def dfs(node: int) -> bool:
-        if node in visiting:
-            return True
-
-        if node in visited:
-            return False
-
-        visiting.add(node)
-
-        for nei in graph[node]:
-            if dfs(nei):
-                return True
-
-        visiting.remove(node)
-        visited.add(node)
-
-        return False
-
-    for node in range(n):
-        if dfs(node):
-            return True
-
-    return False
-```
-
-Meaning:
-
-```text
-visiting = nodes in current recursion path
-visited = fully processed nodes
-```
-
----
-
-## Topological Sort: Kahn’s Algorithm
-
-```python
-from collections import deque
-
-def topo_sort(n: int, edges: list[list[int]]) -> list[int]:
-    graph = [[] for _ in range(n)]
-    indegree = [0] * n
-
-    for u, v in edges:
-        graph[u].append(v)
-        indegree[v] += 1
-
-    q = deque()
-
-    for node in range(n):
-        if indegree[node] == 0:
-            q.append(node)
-
-    order = []
-
-    while q:
-        node = q.popleft()
-        order.append(node)
-
-        for nei in graph[node]:
-            indegree[nei] -= 1
-
-            if indegree[nei] == 0:
-                q.append(nei)
-
-    return order if len(order) == n else []
-```
-
-Use for:
-
-```text
-course schedule
-build dependencies
-task ordering
-alien dictionary
-```
-
----
-
-## Dijkstra
-
-Use for shortest path with non-negative edge weights.
-
-```python
-import heapq
-from collections import defaultdict
-
-def dijkstra(n: int, edges: list[list[int]], source: int) -> list[float]:
-    graph = defaultdict(list)
-
-    for u, v, w in edges:
-        graph[u].append((v, w))
-
-    dist = [float("inf")] * n
-    dist[source] = 0
-
-    heap = [(0, source)]
-
-    while heap:
-        curr_dist, node = heapq.heappop(heap)
-
-        if curr_dist > dist[node]:
-            continue
-
-        for nei, weight in graph[node]:
-            new_dist = curr_dist + weight
-
-            if new_dist < dist[nei]:
-                dist[nei] = new_dist
-                heapq.heappush(heap, (new_dist, nei))
-
-    return dist
-```
-
-Important phrase:
-
-```text
-The heap may contain stale entries, so I skip an entry if its distance is greater than the best known distance.
-```
-
----
-
-# 24. Core Pattern 20: Union-Find / DSU
-
-Use for:
-
-```text
-connected components
-dynamic connectivity
-cycle detection in undirected graph
-Kruskal MST
-accounts merge
-number of provinces
-```
-
-## Template
-
-```python
-class DSU:
-    def __init__(self, n: int):
-        self.parent = list(range(n))
-        self.rank = [0] * n
-        self.components = n
-
-    def find(self, x: int) -> int:
-        if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])
-
-        return self.parent[x]
-
-    def union(self, a: int, b: int) -> bool:
-        root_a = self.find(a)
-        root_b = self.find(b)
-
-        if root_a == root_b:
-            return False
-
-        if self.rank[root_a] < self.rank[root_b]:
-            root_a, root_b = root_b, root_a
-
-        self.parent[root_b] = root_a
-
-        if self.rank[root_a] == self.rank[root_b]:
-            self.rank[root_a] += 1
-
-        self.components -= 1
-
-        return True
-```
-
-Use:
-
-```python
-def count_components(n: int, edges: list[list[int]]) -> int:
-    dsu = DSU(n)
-
-    for u, v in edges:
-        dsu.union(u, v)
-
-    return dsu.components
-```
-
-Staff-level explanation:
-
-```text
-Path compression flattens the tree during find.
-Union by rank keeps trees shallow.
-```
-
----
-
-# 25. Core Pattern 21: Trie
-
-Use for:
-
-```text
-prefix search
-word dictionary
-autocomplete
-word break variants
-search suggestions
-```
-
-## Trie Node
-
-```python
-class TrieNode:
-    def __init__(self):
-        self.children = {}
-        self.is_word = False
-```
-
-## Trie
-
-```python
-class Trie:
-    def __init__(self):
-        self.root = TrieNode()
-
-    def insert(self, word: str) -> None:
-        node = self.root
-
-        for ch in word:
-            if ch not in node.children:
-                node.children[ch] = TrieNode()
-
-            node = node.children[ch]
-
-        node.is_word = True
-
-    def search(self, word: str) -> bool:
-        node = self.root
-
-        for ch in word:
-            if ch not in node.children:
-                return False
-
-            node = node.children[ch]
-
-        return node.is_word
-
-    def starts_with(self, prefix: str) -> bool:
-        node = self.root
-
-        for ch in prefix:
-            if ch not in node.children:
-                return False
-
-            node = node.children[ch]
-
-        return True
-```
-
----
-
-# 26. Core Pattern 22: Intervals
-
-## Merge Intervals
-
-Already shown.
-
-## Insert Interval
-
-```python
-def insert_interval(intervals: list[list[int]], new_interval: list[int]) -> list[list[int]]:
-    ans = []
-    i = 0
-    n = len(intervals)
-
-    while i < n and intervals[i][1] < new_interval[0]:
-        ans.append(intervals[i])
-        i += 1
-
-    while i < n and intervals[i][0] <= new_interval[1]:
-        new_interval[0] = min(new_interval[0], intervals[i][0])
-        new_interval[1] = max(new_interval[1], intervals[i][1])
-        i += 1
-
-    ans.append(new_interval)
-
-    while i < n:
-        ans.append(intervals[i])
-        i += 1
-
-    return ans
-```
-
-## Meeting Rooms
-
-```python
-def can_attend_meetings(intervals: list[list[int]]) -> bool:
-    intervals.sort()
-
-    for i in range(1, len(intervals)):
-        if intervals[i][0] < intervals[i - 1][1]:
-            return False
-
-    return True
-```
-
-## Minimum Meeting Rooms
-
-```python
-import heapq
-
-def min_meeting_rooms(intervals: list[list[int]]) -> int:
-    intervals.sort(key=lambda x: x[0])
-    heap = []
-
-    for start, end in intervals:
-        if heap and heap[0] <= start:
-            heapq.heappop(heap)
-
-        heapq.heappush(heap, end)
-
-    return len(heap)
-```
-
----
-
-# 27. Core Pattern 23: Bit Manipulation
-
-Use for:
-
-```text
-xor tricks
-subsets
-flags
-single number
-power of two
-bit masks
-```
-
-## XOR Rules
-
-```text
-x ^ x = 0
-x ^ 0 = x
-xor is commutative and associative
-```
-
-## Single Number
-
 ```python
-def single_number(nums: list[int]) -> int:
-    ans = 0
-
-    for x in nums:
-        ans ^= x
-
-    return ans
-```
-
-## Power of Two
-
-```python
-def is_power_of_two(n: int) -> bool:
-    return n > 0 and (n & (n - 1)) == 0
-```
-
-## Generate Subsets with Bitmask
-
-```python
-def subsets(nums: list[int]) -> list[list[int]]:
-    n = len(nums)
-    ans = []
-
-    for mask in range(1 << n):
-        subset = []
-
-        for i in range(n):
-            if mask & (1 << i):
-                subset.append(nums[i])
-
-        ans.append(subset)
-
-    return ans
-```
-
----
-
-# 28. Core Pattern 24: Math
-
-## Modulo
-
-```python
-MOD = 10**9 + 7
-ans %= MOD
-```
-
-## GCD
-
-```python
-from math import gcd
-
-g = gcd(a, b)
-```
-
-## Ceiling Division
-
-```python
-ceil = (a + b - 1) // b
-```
-
-For positive integers.
-
-## Prime Check
-
-```python
-def is_prime(n: int) -> bool:
-    if n < 2:
-        return False
-
-    d = 2
-
-    while d * d <= n:
-        if n % d == 0:
-            return False
-
-        d += 1
-
-    return True
-```
-
-## Sieve
-
-```python
-def sieve(n: int) -> list[bool]:
-    is_prime = [True] * (n + 1)
-    is_prime[0] = is_prime[1] = False
-
-    p = 2
-
-    while p * p <= n:
-        if is_prime[p]:
-            for multiple in range(p * p, n + 1, p):
-                is_prime[multiple] = False
-
-        p += 1
-
-    return is_prime
-```
-
----
-
-# 29. Python Pitfalls That Kill Interviews
-
-## Pitfall 1: Mutable Default Arguments
-
-Bad:
-
-```python
-def dfs(node, visited=set()):
-    ...
-```
-
-Good:
-
-```python
-def dfs(node, visited=None):
-    if visited is None:
-        visited = set()
-```
-
-## Pitfall 2: Shallow Copy of 2D List
-
-Bad:
-
-```python
-grid = [[0] * cols] * rows
-```
-
-This aliases rows.
-
-Good:
-
-```python
-grid = [[0] * cols for _ in range(rows)]
-```
-
-## Pitfall 3: Modifying List While Iterating
-
-Bad:
-
-```python
-for x in nums:
-    if x < 0:
-        nums.remove(x)
-```
-
-Good:
-
-```python
-nums = [x for x in nums if x >= 0]
-```
-
-## Pitfall 4: `list.pop(0)` for Queue
-
-Bad:
-
-```python
-q = []
-q.pop(0)
-```
-
-Good:
-
-```python
-from collections import deque
-
-q = deque()
-q.popleft()
-```
-
-## Pitfall 5: Recursion Depth
-
-For deep trees or graphs, recursive DFS may fail in Python. Either use iterative DFS or discuss recursion-limit risk. The official Python docs warn that raising the recursion limit should be done carefully because too-high limits can crash the interpreter. ([Python documentation][8])
-
-## Pitfall 6: Sorting Key Bug
-
-Bad:
-
-```python
-intervals.sort(key=lambda x: x[1])
-```
-
-when the algorithm needs start order.
-
-Good:
-
-```python
-intervals.sort(key=lambda x: x[0])
-```
-
-Know why you sort.
-
-## Pitfall 7: Returning Too Late
-
-Bad:
-
-```python
-for x in nums:
-    if x == target:
-        found = True
-
-return found
-```
-
-If `found` was never initialized, bug.
-
-Good:
-
-```python
-for x in nums:
-    if x == target:
-        return True
-
-return False
-```
-
----
-
-# 30. Staff-Level Code Quality Bar
-
-At staff level, your coding answer should not look like rushed contest code. It should be:
-
-```text
-clear
-small
-well-named
-edge-case safe
-complexity aware
-easy to modify
-```
-
-Example: acceptable but weak:
-
-```python
-def f(a, k):
-    d = {}
-    for i in range(len(a)):
-        if k - a[i] in d:
-            return [d[k - a[i]], i]
-        d[a[i]] = i
-```
-
-Better:
-
-```python
-def two_sum(nums: list[int], target: int) -> list[int]:
-    value_to_index = {}
-
-    for i, value in enumerate(nums):
-        complement = target - value
-
-        if complement in value_to_index:
-            return [value_to_index[complement], i]
-
-        value_to_index[value] = i
-
-    return []
-```
-
-A staff-level explanation:
-
-```text
-I store previously seen values in a hash map from value to index.
-At index i, if target - nums[i] was seen earlier, we found a valid pair.
-This avoids checking all pairs.
-Time is O(n), and space is O(n).
-```
-
----
-
-# 31. Problem Recognition Map
-
-Use this map during practice.
-
-```text
-Need fast lookup?
-    hash set / hash map
-
-Need counts?
-    Counter / dict / defaultdict(int)
-
-Need contiguous subarray or substring?
-    sliding window / prefix sum
-
-Need sorted input and pair?
-    two pointers
-
-Need first true / minimum feasible?
-    binary search
-
-Need top k / smallest / largest stream?
-    heap
-
-Need matching / next greater?
-    stack / monotonic stack
-
-Need shortest path unweighted?
-    BFS
-
-Need explore all connected cells/nodes?
-    DFS
-
-Need dependency order?
-    topological sort
-
-Need dynamic connectivity?
-    union-find
-
-Need all combinations/permutations?
-    backtracking
-
-Need optimize overlapping choices?
-    dynamic programming
-
-Need prefix lookup?
-    trie
-
-Need range updates?
-    difference array
-
-Need intervals?
-    sort by start or end, then merge/greedy/heap
-```
-
----
-
-# 32. Must-Know FAANG+ Problems by Pattern
-
-Do not grind randomly. Master patterns.
-
-## Arrays / Hashing
-
-```text
-Two Sum
-Contains Duplicate
-Valid Anagram
-Group Anagrams
-Top K Frequent Elements
-Product of Array Except Self
-Longest Consecutive Sequence
-```
-
-## Two Pointers
-
-```text
-Valid Palindrome
-Two Sum II
-3Sum
-Container With Most Water
-Remove Duplicates from Sorted Array
-```
-
-## Sliding Window
-
-```text
-Best Time to Buy and Sell Stock
-Longest Substring Without Repeating Characters
-Minimum Window Substring
-Permutation in String
-Longest Repeating Character Replacement
-```
-
-## Stack
-
-```text
-Valid Parentheses
-Min Stack
-Evaluate Reverse Polish Notation
-Daily Temperatures
-Largest Rectangle in Histogram
-```
-
-## Binary Search
-
-```text
-Binary Search
-Search Rotated Sorted Array
-Find Minimum in Rotated Sorted Array
-Koko Eating Bananas
-Capacity to Ship Packages
-Median of Two Sorted Arrays
-```
-
-## Trees
-
-```text
-Maximum Depth of Binary Tree
-Invert Binary Tree
-Diameter of Binary Tree
-Validate BST
-Lowest Common Ancestor
-Serialize and Deserialize Binary Tree
-```
-
-## Graphs
-
-```text
-Number of Islands
-Clone Graph
-Course Schedule
-Pacific Atlantic Water Flow
-Word Ladder
-Network Delay Time
-```
-
-## Dynamic Programming
-
-```text
-Climbing Stairs
-House Robber
-Coin Change
-Longest Increasing Subsequence
-Word Break
-Edit Distance
-Regular Expression Matching
-```
-
-## Backtracking
-
-```text
-Subsets
-Permutations
-Combination Sum
-Word Search
-N Queens
-Generate Parentheses
-```
-
-## Intervals
-
-```text
-Merge Intervals
-Insert Interval
-Meeting Rooms
-Meeting Rooms II
-Non-overlapping Intervals
-Minimum Arrows to Burst Balloons
-```
-
----
-
-# 33. The Final Interview Template
-
-Use this exact skeleton in your head.
-
-```python
-def solve(input_data):
-    # 1. Handle edge cases
-    if not input_data:
-        return ...
-
-    # 2. Initialize data structures
-    ...
-
-    # 3. Iterate / recurse / search
-    for ...:
-        ...
-
-    # 4. Return answer
-    return ...
-```
-
-For graph:
-
-```python
-def solve(n, edges):
-    graph = [[] for _ in range(n)]
-
-    for u, v in edges:
-        graph[u].append(v)
-        graph[v].append(u)
-
-    visited = set()
-
-    def dfs(node):
-        visited.add(node)
-
-        for nei in graph[node]:
-            if nei not in visited:
-                dfs(nei)
-
-    ...
-```
-
-For DP:
-
-```python
-def solve(nums):
-    dp = ...
-
-    for i in range(...):
-        dp[i] = ...
-
-    return dp[-1]
-```
-
-For binary search:
-
-```python
-def solve(nums):
-    def feasible(x):
-        ...
-
-    left = ...
-    right = ...
-
-    while left < right:
-        mid = (left + right) // 2
-
-        if feasible(mid):
-            right = mid
-        else:
-            left = mid + 1
-
-    return left
-```
-
----
-
-# 34. What to Say Out Loud in a Staff-Level Coding Round
-
-Use this language.
-
-## When starting
-
-```text
-I’ll first restate the problem to make sure I understand it.
-```
-
-## When giving brute force
-
-```text
-The straightforward solution is to check every pair, which is O(n²).
-That is likely too slow if n is large.
+a = [1, 2]
+b = a
+b.append(3)
+print(a)  # [1, 2, 3]
 ```
 
-## When optimizing
+`b = a` does not copy. It creates another name for the same list.
 
-```text
-The repeated work is lookup, so I’ll trade space for time using a hash map.
-```
-
-## When coding
-
-```text
-I’ll maintain the invariant that the map contains only values seen before the current index.
-```
-
-## When testing
-
-```text
-Let’s test empty input, a single element, duplicates, and negative values.
-```
+> **INTERNAL:** In CPython, objects have identity, type, reference count, and
+> value. Names live in namespaces and point to objects.
 
-## When finishing
-
-```text
-Time complexity is O(n) because each element is processed once.
-Space complexity is O(n) for the hash map.
-```
+## 4.2 Mutability
 
-## When stuck
+Common immutable objects:
 
 ```text
-Let me step back and identify the invariant.
+int
+float
+bool
+str
+tuple, if all contained values are immutable
+frozenset
+None
 ```
-
-That sentence is powerful.
-
----
-
-# 35. 8-Week Study Plan
-
-## Week 1: Python DSA Fluency
 
-Master:
+Common mutable objects:
 
 ```text
 list
 dict
 set
-tuple
 deque
-Counter
-defaultdict
-heapq
-bisect
-cache
+bytearray
+most custom objects
 ```
 
-Implement:
-
-```text
-Two Sum
-Group Anagrams
-Valid Parentheses
-Binary Search
-Number of Islands
-```
-
-## Week 2: Arrays, Strings, Hashing
-
-Focus:
-
-```text
-frequency
-prefix sum
-two pointers
-sliding window
-```
-
-## Week 3: Stack, Queue, Intervals, Sorting
-
-Focus:
-
-```text
-monotonic stack
-merge intervals
-meeting rooms
-greedy after sorting
-```
-
-## Week 4: Trees
-
-Focus:
-
-```text
-recursive DFS
-iterative DFS
-BFS level order
-BST bounds
-tree DP
-```
-
-## Week 5: Graphs
-
-Focus:
-
-```text
-DFS/BFS
-topological sort
-union-find
-Dijkstra
-cycle detection
-```
-
-## Week 6: Dynamic Programming
-
-Focus:
-
-```text
-1D DP
-2D DP
-knapsack
-sequence DP
-memoized recursion
-```
-
-## Week 7: Backtracking and Advanced Patterns
-
-Focus:
-
-```text
-subsets
-permutations
-combination sum
-word search
-tries
-bitmasks
-```
-
-## Week 8: Mock Interviews
-
-Do:
-
-```text
-45-minute timed problems
-explain aloud
-write tests
-give complexity
-review mistakes
-```
-
-At staff level, also practice:
-
-```text
-turning ambiguous requirements into constraints
-explaining tradeoffs
-handling follow-up changes
-discussing production implications
-```
-
----
-
-# 36. Final Python DSA Reference Sheet
-
-```python
-from collections import defaultdict, Counter, deque
-from functools import cache
-from bisect import bisect_left, bisect_right
-import heapq
-import math
-```
-
-## Hash Map
-
-```python
-freq = defaultdict(int)
-freq[x] += 1
-```
-
-## Set
-
-```python
-seen = set()
-seen.add(x)
-x in seen
-```
-
-## Queue
-
-```python
-q = deque([start])
-q.append(x)
-q.popleft()
-```
-
-## Heap
-
-```python
-heap = []
-heapq.heappush(heap, x)
-heapq.heappop(heap)
-```
-
-## Max Heap
-
-```python
-heapq.heappush(heap, -x)
-largest = -heapq.heappop(heap)
-```
-
-## Binary Search
-
-```python
-i = bisect_left(arr, x)
-j = bisect_right(arr, x)
-```
-
-## Memoization
-
-```python
-@cache
-def dp(i):
-    ...
-```
-
-## Sort
-
-```python
-arr.sort()
-arr.sort(key=lambda x: x[0])
-arr.sort(reverse=True)
-```
-
-## Enumerate
-
-```python
-for i, x in enumerate(nums):
-    ...
-```
-
-## Grid Directions
-
-```python
-dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-```
-
-## Infinity
-
-```python
-INF = float("inf")
-```
-
----
-
-# 37. The Minimum You Must Master
-
-To be interview-ready, you should be able to write these from memory:
-
-```text
-two sum
-sliding window longest substring
-binary search lower bound
-merge intervals
-valid parentheses
-monotonic stack
-BFS grid
-DFS islands
-tree depth
-validate BST
-reverse linked list
-topological sort
-Dijkstra
-union-find
-subsets
-permutations
-coin change
-house robber
-LIS
-trie
-```
-
-If you can write those cleanly, explain them, test them, and adapt them to follow-ups, you are no longer “learning Python.” You are using Python as an interview execution tool.
-
-That is the goal.
-
-[1]: https://www.amazon.jobs/content/en/how-we-hire/interview-prep/software-development-topics "Amazon Software Development Interview Topics"
-[2]: https://www.amazon.jobs/content/en/how-we-hire/sde-iii-interview-prep "SDE III Interview Prep"
-[3]: https://docs.python.org/3/library/collections.html "collections — Container datatypes — Python 3.14.6 documentation"
-[4]: https://wiki.python.org/moin/TimeComplexity "TimeComplexity"
-[5]: https://docs.python.org/3/library/heapq.html "heapq — Heap queue algorithm — Python 3.14.6 documentation"
-[6]: https://docs.python.org/3/library/bisect.html "bisect — Array bisection algorithm — Python 3.14.6 documentation"
-[7]: https://docs.python.org/3/library/functools.html "functools — Higher-order functions and operations on callable objects — Python 3.14.6 documentation"
-[8]: https://docs.python.org/3/library/sys.html "sys — System-specific parameters and functions — Python 3.14.6 documentation"
-
-
-I’m using the uploaded CS50P transcript only as a baseline for Python fundamentals, then refocusing everything toward FAANG+ DS/Algo interview speed, correctness, and Java-to-Python transition. 
-
-# Python for FAANG+ DS/Algo Interviews
-
-## The Java Developer’s End-to-End Python Handbook
-
-This is not a generic Python course. This is the Python you need to solve coding rounds fast, explain tradeoffs clearly, and avoid Python-specific traps that cause wrong answers or TLE.
-
-Assume Python 3.10+ for interviews unless the platform says otherwise. For interview coding, avoid very new version-specific features unless you know the judge supports them. For example, Python’s `heapq` is historically a min-heap API; Python 3.14 adds max-heap helpers, but in interviews you should still usually use negative values for max-heaps because most platforms may not run 3.14. ([Python documentation][1])
-
----
-
-# 1. The Core Mindset
-
-As a Java developer, your biggest advantage is that you already know programming. Your biggest Python danger is assuming Python has the same performance behavior as Java collections.
-
-In interviews, Python wins because you can express the algorithm faster:
-
-```python
-from collections import defaultdict, Counter, deque
-from heapq import heappush, heappop
-from bisect import bisect_left, bisect_right
-from functools import lru_cache
-```
-
-But Python loses when you accidentally do hidden O(n) work:
-
-```python
-arr.pop(0)       # bad: O(n)
-s = s[1:]        # bad in loops: copies string/list
-x in list        # O(n), not O(1)
-sorted(...)      # O(n log n), not free
-```
-
-Your interview goal:
-
-```text
-Correct algorithm
-  + correct data structure
-  + clean Python implementation
-  + explicit complexity
-  + edge cases handled
-```
-
----
-
-# 2. Python vs Java: Interview Translation Table
-
-| Java                 | Python                    | Interview Notes                                                                           |                    |                    |
-| -------------------- | ------------------------- | ----------------------------------------------------------------------------------------- | ------------------ | ------------------ |
-| `ArrayList<Integer>` | `list[int]`               | Dynamic array. Append O(1) amortized. Insert/delete middle O(n).                          |                    |                    |
-| `int[]`              | `list[int]`               | Python integers are objects, but fine for interviews.                                     |                    |                    |
-| `HashMap<K,V>`       | `dict`                    | Average O(1) lookup/insert/delete.                                                        |                    |                    |
-| `HashSet<T>`         | `set`                     | Average O(1) membership.                                                                  |                    |                    |
-| `PriorityQueue<T>`   | `heapq` on list           | Min-heap only in normal interview Python. Use negative values for max-heap.               |                    |                    |
-| `ArrayDeque<T>`      | `collections.deque`       | Use for BFS queue, O(1) `popleft`.                                                        |                    |                    |
-| `Stack<T>`           | `list`                    | Use `append` and `pop`.                                                                   |                    |                    |
-| `StringBuilder`      | `list` + `"".join(parts)` | Strings are immutable.                                                                    |                    |                    |
-| `TreeMap`, `TreeSet` | no built-in equivalent    | Use `bisect` on sorted list, heap, two heaps, or custom structure. Beware insertion O(n). |                    |                    |
-| `Comparator`         | `key=` function           | Python sorting uses key extraction, not comparator.                                       |                    |                    |
-| `Pair`               | tuple `(a, b)`            | Tuples compare lexicographically. Very useful in heaps/sorting.                           |                    |                    |
-| `null`               | `None`                    | Check with `is None`, not `== None`.                                                      |                    |                    |
-| `true/false`         | `True/False`              | Capitalized.                                                                              |                    |                    |
-| `&&`, `              |                           | `, `!`                                                                                    | `and`, `or`, `not` | Python uses words. |
-| `this`               | `self`                    | For class methods.                                                                        |                    |                    |
-| `final` constants    | uppercase convention      | Python does not enforce constants.                                                        |                    |                    |
-
----
-
-# 3. Python Syntax You Actually Need
-
-## Variables
-
-Python is dynamically typed:
+Immutable example:
 
 ```python
 x = 10
-name = "David"
-seen = set()
+y = x
+y += 1
+print(x)  # 10
 ```
 
-No type declarations needed.
-
-Optional type hints are useful for clarity:
+Mutable example:
 
 ```python
-def two_sum(nums: list[int], target: int) -> list[int]:
+a = []
+b = a
+b.append(1)
+print(a)  # [1]
+```
+
+## 4.3 Equality vs Identity
+
+Use `==` for value equality:
+
+```python
+if value == target:
     ...
 ```
 
-Type hints do not enforce runtime behavior.
-
----
-
-## `if`, `elif`, `else`
+Use `is` for identity:
 
 ```python
-if x < y:
-    return -1
-elif x > y:
-    return 1
-else:
+if node is None:
+    ...
+```
+
+Use identity when you need the exact same object:
+
+```python
+if a is b:
+    ...
+```
+
+> **PITFALL:** Never use `is` for numeric or string equality. CPython caches
+> some small integers and may intern some strings, so `is` may appear to work
+> until it does not.
+
+## 4.4 Truthiness
+
+Falsy values:
+
+```text
+False
+None
+0
+0.0
+""
+[]
+{}
+set()
+()
+```
+
+Idiomatic empty check:
+
+```python
+if not nums:
     return 0
 ```
 
-Python requires indentation. No braces.
-
----
-
-## Loops
+But be precise when `0` or `""` is valid:
 
 ```python
-for x in nums:
-    print(x)
-```
-
-Index loop:
-
-```python
-for i in range(len(nums)):
-    print(i, nums[i])
-```
-
-Better index + value:
-
-```python
-for i, x in enumerate(nums):
-    print(i, x)
-```
-
-Reverse index loop:
-
-```python
-for i in range(len(nums) - 1, -1, -1):
-    print(nums[i])
-```
-
----
-
-## Functions
-
-```python
-def add(a, b):
-    return a + b
-```
-
-Default parameters:
-
-```python
-def dfs(node, parent=None):
+if x is None:
     ...
 ```
 
-Important pitfall: never use mutable default arguments.
+> **PITFALL:** `if not x` means "x is falsy", not "x is missing."
 
-Bad:
+## 4.5 Boolean Operators Return Operands
+
+Python's `and` and `or` return one of the original operands, not necessarily a
+boolean.
+
+```python
+result = "" or "default"   # "default"
+result = "abc" and 123     # 123
+```
+
+This is useful:
+
+```python
+name = user_input or "anonymous"
+```
+
+But dangerous:
+
+```python
+count = user_count or 10
+```
+
+If `user_count` is `0`, this incorrectly chooses `10`.
+
+## 4.6 Chained Comparisons
+
+```python
+if 0 <= i < n:
+    ...
+```
+
+Equivalent to:
+
+```python
+if 0 <= i and i < n:
+    ...
+```
+
+The middle expression is evaluated once.
+
+## 4.7 Multiple Assignment
+
+```python
+a, b = b, a
+```
+
+```python
+prev, curr = curr, curr.next
+```
+
+> **TRICK:** The right-hand side is evaluated before assignment. This makes
+> swaps and state transitions clean.
+
+## 4.8 Unpacking
+
+```python
+row, col = cell
+```
+
+```python
+first, *middle, last = arr
+```
+
+```python
+for key, value in d.items():
+    ...
+```
+
+> **TIP:** Unpacking makes tuple-heavy Python code readable. Use descriptive
+> names rather than indexing into tuples repeatedly.
+
+---
+
+# 5. Functions, Scope, and Closures
+
+## 5.1 Function Basics
+
+```python
+def solve(nums: list[int], target: int) -> int:
+    ...
+```
+
+Type hints improve readability but are not enforced at runtime.
+
+```python
+def f(x: int) -> int:
+    return x
+
+f("abc")  # runs unless your code fails inside
+```
+
+## 5.2 Default Arguments
+
+Good:
+
+```python
+def f(limit: int = 10) -> int:
+    return limit
+```
+
+Bad with mutable objects:
 
 ```python
 def f(path=[]):
@@ -3635,7 +523,9 @@ def f(path=[]):
     return path
 ```
 
-Good:
+The list is created once, shared across calls.
+
+Correct pattern:
 
 ```python
 def f(path=None):
@@ -3645,3357 +535,146 @@ def f(path=None):
     return path
 ```
 
----
+> **PITFALL:** Default argument expressions are evaluated once when the function
+> is defined, not once per call.
 
-## Tuple unpacking
-
-```python
-a, b = b, a
-```
-
-Multiple assignment is heavily used in linked lists:
+## 5.3 Positional, Keyword, and Keyword-Only Arguments
 
 ```python
-prev, curr = None, head
-```
-
-Returning multiple values:
-
-```python
-def min_max(nums):
-    return min(nums), max(nums)
-
-lo, hi = min_max(nums)
-```
-
----
-
-## Truthiness
-
-Falsy values:
-
-```python
-False
-None
-0
-0.0
-""
-[]
-{}
-set()
-```
-
-Common use:
-
-```python
-if not nums:
-    return 0
-```
-
-But be careful:
-
-```python
-if not node:
+def connect(host, port, *, timeout=5):
     ...
 ```
 
-This is fine for `None` nodes in linked lists/trees.
+`timeout` must be passed by name:
 
----
-
-# 4. Must-Know Python Data Structures
-
-Python’s standard library gives specialized containers such as `deque`, `Counter`, and `defaultdict` in `collections`, which are extremely useful for interview problems. ([Python documentation][2])
-
-## 4.1 List
-
-A Python `list` is a dynamic array.
-
-```python
-arr = []
-arr.append(10)
-arr.append(20)
-arr.pop()
-```
-
-Complexities:
-
-| Operation          | Complexity     |
-| ------------------ | -------------- |
-| `arr[i]`           | O(1)           |
-| `arr.append(x)`    | O(1) amortized |
-| `arr.pop()`        | O(1)           |
-| `arr.pop(0)`       | O(n), avoid    |
-| `arr.insert(i, x)` | O(n)           |
-| `x in arr`         | O(n)           |
-| slicing `arr[l:r]` | O(k), copies   |
-
-Interview rules:
-
-```python
-stack = []
-stack.append(x)
-top = stack[-1]
-stack.pop()
-```
-
-Do not use list as a queue:
-
-```python
-q = []
-q.pop(0)   # bad
-```
-
-Use `deque`.
-
----
-
-## 4.2 Deque
-
-```python
-from collections import deque
-
-q = deque()
-q.append(1)
-q.append(2)
-q.popleft()
-```
-
-Use for:
-
-```text
-BFS
-sliding window max/min
-monotonic queues
-queue simulation
-```
-
----
-
-## 4.3 Dict
-
-```python
-mp = {}
-mp["a"] = 1
-mp["a"] += 1
-```
-
-Safe frequency counting:
-
-```python
-freq = {}
-for x in nums:
-    freq[x] = freq.get(x, 0) + 1
-```
-
-Or:
-
-```python
-from collections import defaultdict
-
-freq = defaultdict(int)
-for x in nums:
-    freq[x] += 1
-```
-
-Important:
-
-```python
-if key in mp:
-    ...
-```
-
-`key in mp` checks keys, not values.
-
----
-
-## 4.4 Set
-
-```python
-seen = set()
-seen.add(x)
-
-if x in seen:
-    ...
-```
-
-Use for:
-
-```text
-visited nodes
-duplicate detection
-O(1) membership
-```
-
-Empty set:
-
-```python
-s = set()
-```
-
-Not:
-
-```python
-s = {}      # this is dict
-```
-
----
-
-## 4.5 Counter
-
-```python
-from collections import Counter
-
-freq = Counter(nums)
-freq["a"] += 1
-freq.most_common(3)
-```
-
-Useful for:
-
-```text
-anagrams
-top-k frequency
-frequency comparison
-multiset-like logic
-```
-
-Pitfall:
-
-```python
-freq[x] -= 1
-```
-
-This may leave zero or negative counts. Sometimes you must delete:
-
-```python
-if freq[x] == 0:
-    del freq[x]
-```
-
----
-
-## 4.6 defaultdict
-
-```python
-from collections import defaultdict
-
-graph = defaultdict(list)
-graph[u].append(v)
-```
-
-Common forms:
-
-```python
-defaultdict(int)      # frequency
-defaultdict(list)     # graph adjacency
-defaultdict(set)      # grouping unique values
-```
-
-Bad:
-
-```python
-defaultdict([])       # wrong
-```
-
-You pass a factory, not a value.
-
----
-
-## 4.7 Heap
-
-Python’s `heapq` operates on lists and gives a min-heap. Use `heappush`, `heappop`, and `heapify`; `heapify` builds a heap in linear time, and push/pop operations are logarithmic. ([Python documentation][1])
-
-```python
-from heapq import heappush, heappop, heapify
-
-heap = []
-heappush(heap, 5)
-heappush(heap, 2)
-heappush(heap, 9)
-
-heappop(heap)     # 2
-```
-
-Max-heap:
-
-```python
-heappush(heap, -x)
-largest = -heappop(heap)
-```
-
-Heap with tuples:
-
-```python
-heappush(heap, (distance, node))
-```
-
-Python compares tuples lexicographically:
-
-```python
-(1, "a") < (2, "z")    # True
-```
-
-Critical pitfall:
-
-```python
-heappush(heap, (priority, obj))
-```
-
-If two priorities tie, Python compares `obj`. If `obj` is not comparable, crash.
-
-Fix with tie-breaker:
-
-```python
-counter = 0
-heappush(heap, (priority, counter, obj))
-counter += 1
-```
-
----
-
-## 4.8 Bisect
-
-`bisect_left` and `bisect_right` perform binary search on sorted lists. But `insort` still has O(n) insertion because list insertion shifts elements, even though the search part is O(log n). ([Python documentation][3])
-
-```python
-from bisect import bisect_left, bisect_right
-
-arr = [1, 2, 2, 2, 5]
-
-bisect_left(arr, 2)    # 1
-bisect_right(arr, 2)   # 4
-```
-
-Counts of target:
-
-```python
-count = bisect_right(arr, x) - bisect_left(arr, x)
-```
-
-Insert position:
-
-```python
-i = bisect_left(arr, x)
-```
-
-But:
-
-```python
-arr.insert(i, x)   # O(n)
-```
-
-Do not pretend this is `TreeMap`.
-
----
-
-## 4.9 functools cache
-
-For DP memoization:
-
-```python
-from functools import lru_cache
-
-@lru_cache(None)
-def dp(i, j):
-    ...
-```
-
-Python’s `functools.cache` is an unbounded memoization wrapper equivalent to `lru_cache(maxsize=None)`, but `lru_cache(None)` is widely recognized and safe in interviews. ([Python documentation][4])
-
-Arguments must be hashable:
-
-```python
-dp(i, tuple(arr))   # okay
-dp(i, arr)          # bad if arr is list
-```
-
----
-
-# 5. Python Complexity Cheat Sheet
-
-## List
-
-```text
-append: O(1) amortized
-pop end: O(1)
-pop front: O(n)
-insert middle: O(n)
-indexing: O(1)
-slicing: O(k)
-sort: O(n log n)
-```
-
-## Dict / Set
-
-```text
-lookup: average O(1)
-insert: average O(1)
-delete: average O(1)
-```
-
-Worst case can degrade, but interviews generally use average case.
-
-## Heap
-
-```text
-heappush: O(log n)
-heappop: O(log n)
-heapify: O(n)
-peek heap[0]: O(1)
-```
-
-## Deque
-
-```text
-append: O(1)
-appendleft: O(1)
-pop: O(1)
-popleft: O(1)
-```
-
-## Sorting
-
-```text
-sorted(arr): returns new sorted list
-arr.sort(): sorts in place, returns None
-```
-
----
-
-# 6. Python Pitfalls That Kill Interviews
-
-## Pitfall 1: `list.pop(0)`
-
-Bad BFS:
-
-```python
-q = [start]
-
-while q:
-    node = q.pop(0)   # O(n)
-```
-
-Good BFS:
-
-```python
-from collections import deque
-
-q = deque([start])
-
-while q:
-    node = q.popleft()
-```
-
----
-
-## Pitfall 2: Aliased 2D arrays
-
-Bad:
-
-```python
-grid = [[0] * cols] * rows
-```
-
-All rows point to the same list.
-
-Good:
-
-```python
-grid = [[0] * cols for _ in range(rows)]
-```
-
----
-
-## Pitfall 3: Mutable default arguments
-
-Bad:
-
-```python
-def dfs(node, path=[]):
-    ...
-```
-
-Good:
-
-```python
-def dfs(node, path=None):
-    if path is None:
-        path = []
-```
-
----
-
-## Pitfall 4: Slicing inside recursion or loops
-
-Bad:
-
-```python
-def solve(arr):
-    return solve(arr[1:])
-```
-
-`arr[1:]` copies O(n) each time.
-
-Good:
-
-```python
-def solve(i):
-    return solve(i + 1)
-```
-
-Pass indices instead.
-
----
-
-## Pitfall 5: String concatenation in loops
-
-Bad:
-
-```python
-s = ""
-for ch in chars:
-    s += ch
-```
-
-Good:
-
-```python
-parts = []
-for ch in chars:
-    parts.append(ch)
-
-s = "".join(parts)
-```
-
----
-
-## Pitfall 6: `sort()` returns `None`
-
-Bad:
-
-```python
-arr = arr.sort()
-```
-
-Now `arr` is `None`.
-
-Good:
-
-```python
-arr.sort()
-```
-
-Or:
-
-```python
-arr = sorted(arr)
-```
-
----
-
-## Pitfall 7: `is` vs `==`
-
-Use `is` for identity:
-
-```python
-if node is None:
-    ...
-```
-
-Use `==` for value equality:
-
-```python
-if s == "abc":
-    ...
-```
-
-Bad:
-
-```python
-if x is 1000:
-    ...
-```
-
----
-
-## Pitfall 8: Python division differs from Java
-
-```python
-5 // 2     # 2
--5 // 2    # -3
-```
-
-Python `//` floors toward negative infinity. Java integer division truncates toward zero.
-
-For LeetCode calculator problems requiring truncation toward zero:
-
-```python
-def trunc_div(a, b):
-    sign = -1 if (a < 0) ^ (b < 0) else 1
-    return sign * (abs(a) // abs(b))
-```
-
-Do not use:
-
-```python
-int(a / b)
-```
-
-It may involve floating-point precision issues for huge numbers.
-
----
-
-## Pitfall 9: Recursion depth
-
-Python recursion limit is much lower than Java stack expectations.
-
-Recursive DFS may fail on a deep graph/tree.
-
-Option 1:
-
-```python
-import sys
-sys.setrecursionlimit(10**6)
-```
-
-Option 2: safer for interviews, use iterative DFS:
-
-```python
-stack = [root]
-
-while stack:
-    node = stack.pop()
-```
-
----
-
-## Pitfall 10: Modifying while iterating
-
-Bad:
-
-```python
-for x in arr:
-    if should_remove(x):
-        arr.remove(x)
-```
-
-Good:
-
-```python
-arr = [x for x in arr if not should_remove(x)]
-```
-
-Or iterate over copy:
-
-```python
-for x in arr[:]:
-    ...
-```
-
-But remember slicing copies.
-
----
-
-## Pitfall 11: Set/list/dict copying
-
-```python
-b = a
-```
-
-This does not copy. It aliases.
-
-Shallow copy:
-
-```python
-b = a[:]
-b = list(a)
-b = a.copy()
-```
-
-For nested structures:
-
-```python
-import copy
-b = copy.deepcopy(a)
-```
-
-In interviews, avoid deep copy in hot loops unless necessary.
-
----
-
-## Pitfall 12: Tuple comparison in heap
-
-```python
-heap = []
-heappush(heap, (priority, node))
-```
-
-If two priorities tie, Python compares `node`.
-
-If `node` is a custom object, crash.
-
-Fix:
-
-```python
-heappush(heap, (priority, counter, node))
-counter += 1
-```
-
----
-
-# 7. Interview Input/Output Patterns
-
-On LeetCode-style platforms, you usually write:
-
-```python
-class Solution:
-    def twoSum(self, nums: list[int], target: int) -> list[int]:
-        ...
-```
-
-No need for `input()`.
-
-For HackerRank / CodeSignal / command-line style:
-
-```python
-import sys
-
-data = sys.stdin.read().strip().split()
-```
-
-Convert:
-
-```python
-nums = list(map(int, data))
-```
-
-Line by line:
-
-```python
-import sys
-
-for line in sys.stdin:
-    ...
-```
-
-Fast output:
-
-```python
-out = []
-out.append(str(ans))
-print("\n".join(out))
-```
-
----
-
-# 8. Sorting Mastery
-
-## Basic sort
-
-```python
-arr.sort()
-```
-
-New sorted list:
-
-```python
-b = sorted(arr)
-```
-
-Descending:
-
-```python
-arr.sort(reverse=True)
-```
-
-Sort tuples:
-
-```python
-pairs.sort()
-```
-
-Lexicographic:
-
-```python
-(1, 2) < (1, 3)   # True
-(1, 5) < (2, 0)   # True
-```
-
-## Sort by key
-
-Java comparator:
-
-```java
-Arrays.sort(arr, (a, b) -> a[1] - b[1]);
-```
-
-Python:
-
-```python
-arr.sort(key=lambda x: x[1])
-```
-
-Sort by second ascending, first descending:
-
-```python
-arr.sort(key=lambda x: (x[1], -x[0]))
-```
-
-Sort intervals:
-
-```python
-intervals.sort(key=lambda x: x[0])
-```
-
-Sort strings by length then lexicographic:
-
-```python
-words.sort(key=lambda w: (len(w), w))
-```
-
-## Stable sort
-
-Python sort is stable. This means equal keys preserve original order.
-
-Useful trick:
-
-```python
-items.sort(key=lambda x: x.secondary)
-items.sort(key=lambda x: x.primary)
-```
-
-But usually one tuple key is cleaner.
-
----
-
-# 9. Pattern 1: Hash Map
-
-## Two Sum
-
-```python
-def two_sum(nums, target):
-    seen = {}
-
-    for i, x in enumerate(nums):
-        need = target - x
-        if need in seen:
-            return [seen[need], i]
-        seen[x] = i
-
-    return []
-```
-
-Complexity:
-
-```text
-Time: O(n)
-Space: O(n)
-```
-
-Java instinct: `HashMap<Integer, Integer>`.
-Python: `dict`.
-
----
-
-## Count frequencies
-
-```python
-from collections import Counter
-
-freq = Counter(nums)
-```
-
-Manual:
-
-```python
-freq = {}
-for x in nums:
-    freq[x] = freq.get(x, 0) + 1
-```
-
----
-
-## Group anagrams
-
-```python
-from collections import defaultdict
-
-def group_anagrams(strs):
-    groups = defaultdict(list)
-
-    for s in strs:
-        key = tuple(sorted(s))
-        groups[key].append(s)
-
-    return list(groups.values())
-```
-
-Better for lowercase English letters:
-
-```python
-def group_anagrams(strs):
-    groups = defaultdict(list)
-
-    for s in strs:
-        count = [0] * 26
-        for ch in s:
-            count[ord(ch) - ord("a")] += 1
-        groups[tuple(count)].append(s)
-
-    return list(groups.values())
-```
-
-Why tuple?
-
-```python
-list is not hashable
-tuple is hashable
-```
-
----
-
-# 10. Pattern 2: Two Pointers
-
-Use when:
-
-```text
-array/string is sorted
-you need pair/triplet
-you need in-place compression
-you need left/right convergence
-```
-
-## Valid palindrome
-
-```python
-def is_palindrome(s):
-    l, r = 0, len(s) - 1
-
-    while l < r:
-        while l < r and not s[l].isalnum():
-            l += 1
-        while l < r and not s[r].isalnum():
-            r -= 1
-
-        if s[l].lower() != s[r].lower():
-            return False
-
-        l += 1
-        r -= 1
-
-    return True
-```
-
----
-
-## Two Sum II sorted
-
-```python
-def two_sum_sorted(nums, target):
-    l, r = 0, len(nums) - 1
-
-    while l < r:
-        total = nums[l] + nums[r]
-
-        if total == target:
-            return [l, r]
-        elif total < target:
-            l += 1
-        else:
-            r -= 1
-
-    return [-1, -1]
-```
-
----
-
-## 3Sum
-
-```python
-def three_sum(nums):
-    nums.sort()
-    res = []
-    n = len(nums)
-
-    for i in range(n):
-        if i > 0 and nums[i] == nums[i - 1]:
-            continue
-
-        l, r = i + 1, n - 1
-
-        while l < r:
-            total = nums[i] + nums[l] + nums[r]
-
-            if total == 0:
-                res.append([nums[i], nums[l], nums[r]])
-                l += 1
-                r -= 1
-
-                while l < r and nums[l] == nums[l - 1]:
-                    l += 1
-                while l < r and nums[r] == nums[r + 1]:
-                    r -= 1
-
-            elif total < 0:
-                l += 1
-            else:
-                r -= 1
-
-    return res
-```
-
-Pitfall: duplicate skipping must happen at both `i` and after finding a triplet.
-
----
-
-# 11. Pattern 3: Sliding Window
-
-Use when:
-
-```text
-contiguous subarray/substring
-longest/shortest window
-at most K
-exactly K via atMost(K) - atMost(K-1)
-```
-
-## Fixed-size window
-
-Maximum sum of size `k`:
-
-```python
-def max_sum_k(nums, k):
-    window = sum(nums[:k])
-    best = window
-
-    for r in range(k, len(nums)):
-        window += nums[r] - nums[r - k]
-        best = max(best, window)
-
-    return best
-```
-
----
-
-## Variable-size window: longest substring without repeating
-
-```python
-def length_of_longest_substring(s):
-    seen = set()
-    l = 0
-    best = 0
-
-    for r, ch in enumerate(s):
-        while ch in seen:
-            seen.remove(s[l])
-            l += 1
-
-        seen.add(ch)
-        best = max(best, r - l + 1)
-
-    return best
-```
-
-Alternative faster with last seen index:
-
-```python
-def length_of_longest_substring(s):
-    last = {}
-    l = 0
-    best = 0
-
-    for r, ch in enumerate(s):
-        if ch in last and last[ch] >= l:
-            l = last[ch] + 1
-
-        last[ch] = r
-        best = max(best, r - l + 1)
-
-    return best
-```
-
----
-
-## At most K distinct
-
-```python
-from collections import defaultdict
-
-def longest_at_most_k_distinct(s, k):
-    count = defaultdict(int)
-    l = 0
-    best = 0
-
-    for r, ch in enumerate(s):
-        count[ch] += 1
-
-        while len(count) > k:
-            count[s[l]] -= 1
-            if count[s[l]] == 0:
-                del count[s[l]]
-            l += 1
-
-        best = max(best, r - l + 1)
-
-    return best
-```
-
-Exactly K distinct subarrays:
-
-```python
-def subarrays_with_k_distinct(nums, k):
-    return at_most(nums, k) - at_most(nums, k - 1)
-
-def at_most(nums, k):
-    count = defaultdict(int)
-    l = 0
-    ans = 0
-
-    for r, x in enumerate(nums):
-        count[x] += 1
-
-        while len(count) > k:
-            count[nums[l]] -= 1
-            if count[nums[l]] == 0:
-                del count[nums[l]]
-            l += 1
-
-        ans += r - l + 1
-
-    return ans
-```
-
-The key insight:
-
-```text
-For each r, every subarray ending at r and starting from l..r is valid.
-That count is r - l + 1.
-```
-
----
-
-# 12. Pattern 4: Prefix Sum
-
-Use when:
-
-```text
-range sum
-subarray sum equals target
-count subarrays
-difference between prefixes
-```
-
-## Prefix sum array
-
-```python
-def build_prefix(nums):
-    prefix = [0]
-
-    for x in nums:
-        prefix.append(prefix[-1] + x)
-
-    return prefix
-```
-
-Range sum `[l, r]` inclusive:
-
-```python
-sum_lr = prefix[r + 1] - prefix[l]
-```
-
----
-
-## Subarray sum equals K
-
-```python
-from collections import defaultdict
-
-def subarray_sum(nums, k):
-    count = defaultdict(int)
-    count[0] = 1
-
-    prefix = 0
-    ans = 0
-
-    for x in nums:
-        prefix += x
-        ans += count[prefix - k]
-        count[prefix] += 1
-
-    return ans
-```
-
-Why `count[0] = 1`?
-
-```text
-A subarray from index 0 to i is valid if prefix == k.
-So prefix - k == 0 must already exist once.
-```
-
----
-
-## Longest subarray sum K
-
-```python
-def longest_subarray_sum_k(nums, k):
-    first = {0: -1}
-    prefix = 0
-    best = 0
-
-    for i, x in enumerate(nums):
-        prefix += x
-
-        if prefix - k in first:
-            best = max(best, i - first[prefix - k])
-
-        if prefix not in first:
-            first[prefix] = i
-
-    return best
-```
-
-Important: store first occurrence, not latest.
-
----
-
-# 13. Pattern 5: Difference Array
-
-Use when:
-
-```text
-many range updates
-final array needed
-```
-
-Example: add `val` to all indices `[l, r]`.
-
-```python
-def apply_updates(n, updates):
-    diff = [0] * (n + 1)
-
-    for l, r, val in updates:
-        diff[l] += val
-        if r + 1 < n:
-            diff[r + 1] -= val
-
-    arr = [0] * n
-    running = 0
-
-    for i in range(n):
-        running += diff[i]
-        arr[i] = running
-
-    return arr
-```
-
-Complexity:
-
-```text
-Range updates: O(1) each
-Build final: O(n)
-Total: O(n + q)
-```
-
----
-
-# 14. Pattern 6: Intervals
-
-## Merge intervals
-
-```python
-def merge(intervals):
-    if not intervals:
-        return []
-
-    intervals.sort(key=lambda x: x[0])
-    res = [intervals[0]]
-
-    for start, end in intervals[1:]:
-        last = res[-1]
-
-        if start <= last[1]:
-            last[1] = max(last[1], end)
-        else:
-            res.append([start, end])
-
-    return res
-```
-
----
-
-## Insert interval
-
-```python
-def insert(intervals, new_interval):
-    res = []
-    i = 0
-    n = len(intervals)
-
-    while i < n and intervals[i][1] < new_interval[0]:
-        res.append(intervals[i])
-        i += 1
-
-    while i < n and intervals[i][0] <= new_interval[1]:
-        new_interval[0] = min(new_interval[0], intervals[i][0])
-        new_interval[1] = max(new_interval[1], intervals[i][1])
-        i += 1
-
-    res.append(new_interval)
-
-    while i < n:
-        res.append(intervals[i])
-        i += 1
-
-    return res
-```
-
----
-
-## Meeting rooms
-
-```python
-def can_attend_meetings(intervals):
-    intervals.sort()
-
-    for i in range(1, len(intervals)):
-        if intervals[i][0] < intervals[i - 1][1]:
-            return False
-
-    return True
-```
-
-Minimum rooms:
-
-```python
-from heapq import heappush, heappop
-
-def min_meeting_rooms(intervals):
-    intervals.sort()
-    heap = []
-
-    for start, end in intervals:
-        if heap and heap[0] <= start:
-            heappop(heap)
-
-        heappush(heap, end)
-
-    return len(heap)
-```
-
----
-
-## Sweep line
-
-Use events:
-
-```python
-def max_overlapping(intervals):
-    events = []
-
-    for start, end in intervals:
-        events.append((start, 1))
-        events.append((end, -1))
-
-    events.sort()
-
-    cur = 0
-    best = 0
-
-    for _, delta in events:
-        cur += delta
-        best = max(best, cur)
-
-    return best
-```
-
-Tie handling matters. For closed intervals `[start, end]`, process starts before ends at same coordinate. For half-open intervals `[start, end)`, process ends before starts.
-
----
-
-# 15. Pattern 7: Binary Search
-
-Binary search is not just “find target.” It is a framework for eliminating half the search space.
-
-## Standard search
-
-```python
-def binary_search(nums, target):
-    l, r = 0, len(nums) - 1
-
-    while l <= r:
-        mid = (l + r) // 2
-
-        if nums[mid] == target:
-            return mid
-        elif nums[mid] < target:
-            l = mid + 1
-        else:
-            r = mid - 1
-
-    return -1
-```
-
----
-
-## Lower bound
-
-First index where `nums[i] >= target`.
-
-```python
-def lower_bound(nums, target):
-    l, r = 0, len(nums)
-
-    while l < r:
-        mid = (l + r) // 2
-
-        if nums[mid] < target:
-            l = mid + 1
-        else:
-            r = mid
-
-    return l
-```
-
-Equivalent:
-
-```python
-from bisect import bisect_left
-
-i = bisect_left(nums, target)
-```
-
----
-
-## Upper bound
-
-First index where `nums[i] > target`.
-
-```python
-from bisect import bisect_right
-
-i = bisect_right(nums, target)
-```
-
----
-
-## Binary search on answer
-
-Use when answer is numeric and predicate is monotonic:
-
-```text
-can(x) == False, False, False, True, True, True
-```
-
-Find smallest feasible `x`:
-
-```python
-def binary_search_answer(lo, hi):
-    while lo < hi:
-        mid = (lo + hi) // 2
-
-        if can(mid):
-            hi = mid
-        else:
-            lo = mid + 1
-
-    return lo
-```
-
-Example: Koko eating bananas.
-
-```python
-import math
-
-def min_eating_speed(piles, h):
-    def can(speed):
-        hours = 0
-        for p in piles:
-            hours += (p + speed - 1) // speed
-        return hours <= h
-
-    lo, hi = 1, max(piles)
-
-    while lo < hi:
-        mid = (lo + hi) // 2
-
-        if can(mid):
-            hi = mid
-        else:
-            lo = mid + 1
-
-    return lo
-```
-
-Ceiling division for positive integers:
-
-```python
-(a + b - 1) // b
-```
-
----
-
-# 16. Pattern 8: Stack
-
-Use when:
-
-```text
-nested structure
-previous greater/smaller
-monotonic property
-undo/reverse
-parsing
-```
-
-## Valid parentheses
-
-```python
-def is_valid(s):
-    stack = []
-    match = {")": "(", "]": "[", "}": "{"}
-
-    for ch in s:
-        if ch in "([{":
-            stack.append(ch)
-        else:
-            if not stack or stack[-1] != match[ch]:
-                return False
-            stack.pop()
-
-    return not stack
-```
-
----
-
-## Monotonic stack: next greater element
-
-```python
-def next_greater(nums):
-    res = [-1] * len(nums)
-    stack = []  # indices
-
-    for i, x in enumerate(nums):
-        while stack and nums[stack[-1]] < x:
-            j = stack.pop()
-            res[j] = x
-
-        stack.append(i)
-
-    return res
-```
-
----
-
-## Largest rectangle in histogram
-
-```python
-def largest_rectangle_area(heights):
-    stack = []  # pairs: (start_index, height)
-    best = 0
-
-    for i, h in enumerate(heights):
-        start = i
-
-        while stack and stack[-1][1] > h:
-            idx, height = stack.pop()
-            best = max(best, height * (i - idx))
-            start = idx
-
-        stack.append((start, h))
-
-    n = len(heights)
-
-    for idx, height in stack:
-        best = max(best, height * (n - idx))
-
-    return best
-```
-
----
-
-# 17. Pattern 9: Queue / BFS
-
-## BFS template
-
-```python
-from collections import deque
-
-def bfs(start):
-    q = deque([start])
-    visited = {start}
-
-    while q:
-        node = q.popleft()
-
-        for nei in graph[node]:
-            if nei not in visited:
-                visited.add(nei)
-                q.append(nei)
-```
-
----
-
-## Level-order BFS
-
-```python
-from collections import deque
-
-def level_order(root):
-    if not root:
-        return []
-
-    q = deque([root])
-    res = []
-
-    while q:
-        level = []
-
-        for _ in range(len(q)):
-            node = q.popleft()
-            level.append(node.val)
-
-            if node.left:
-                q.append(node.left)
-            if node.right:
-                q.append(node.right)
-
-        res.append(level)
-
-    return res
-```
-
-Key idea:
-
-```python
-for _ in range(len(q)):
-```
-
-This freezes the current level size.
-
----
-
-## Shortest path in grid
-
-```python
-from collections import deque
-
-def shortest_path_grid(grid):
-    rows, cols = len(grid), len(grid[0])
-    q = deque([(0, 0, 0)])  # row, col, dist
-    visited = {(0, 0)}
-
-    dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-
-    while q:
-        r, c, d = q.popleft()
-
-        if r == rows - 1 and c == cols - 1:
-            return d
-
-        for dr, dc in dirs:
-            nr, nc = r + dr, c + dc
-
-            if (
-                0 <= nr < rows
-                and 0 <= nc < cols
-                and grid[nr][nc] == 0
-                and (nr, nc) not in visited
-            ):
-                visited.add((nr, nc))
-                q.append((nr, nc, d + 1))
-
-    return -1
-```
-
----
-
-## 0-1 BFS
-
-Use when edge weights are only `0` or `1`.
-
-```python
-from collections import deque
-from math import inf
-
-def zero_one_bfs(graph, start, n):
-    dist = [inf] * n
-    dist[start] = 0
-
-    dq = deque([start])
-
-    while dq:
-        node = dq.popleft()
-
-        for nei, w in graph[node]:
-            nd = dist[node] + w
-
-            if nd < dist[nei]:
-                dist[nei] = nd
-
-                if w == 0:
-                    dq.appendleft(nei)
-                else:
-                    dq.append(nei)
-
-    return dist
-```
-
-This is better than Dijkstra for 0/1 weights.
-
----
-
-# 18. Pattern 10: Heap / Priority Queue
-
-## Top K frequent
-
-```python
-from collections import Counter
-from heapq import heappush, heappop
-
-def top_k_frequent(nums, k):
-    freq = Counter(nums)
-    heap = []
-
-    for x, count in freq.items():
-        heappush(heap, (count, x))
-
-        if len(heap) > k:
-            heappop(heap)
-
-    return [x for count, x in heap]
-```
-
-Time:
-
-```text
-O(n log k)
-```
-
----
-
-## K largest elements
-
-```python
-from heapq import heappush, heappop
-
-def k_largest(nums, k):
-    heap = []
-
-    for x in nums:
-        heappush(heap, x)
-        if len(heap) > k:
-            heappop(heap)
-
-    return heap
-```
-
-The heap contains the k largest, not necessarily sorted.
-
----
-
-## K-way merge
-
-```python
-from heapq import heappush, heappop
-
-def merge_k_sorted_lists(lists):
-    heap = []
-    counter = 0
-
-    for node in lists:
-        if node:
-            heappush(heap, (node.val, counter, node))
-            counter += 1
-
-    dummy = ListNode(0)
-    cur = dummy
-
-    while heap:
-        _, _, node = heappop(heap)
-        cur.next = node
-        cur = cur.next
-
-        if node.next:
-            heappush(heap, (node.next.val, counter, node.next))
-            counter += 1
-
-    return dummy.next
-```
-
-Tie-breaker `counter` prevents comparison errors between `ListNode` objects.
-
----
-
-## Median finder
-
-```python
-from heapq import heappush, heappop
-
-class MedianFinder:
-    def __init__(self):
-        self.small = []  # max heap via negative values
-        self.large = []  # min heap
-
-    def addNum(self, num: int) -> None:
-        heappush(self.small, -num)
-
-        if self.small and self.large and -self.small[0] > self.large[0]:
-            heappush(self.large, -heappop(self.small))
-
-        if len(self.small) > len(self.large) + 1:
-            heappush(self.large, -heappop(self.small))
-
-        if len(self.large) > len(self.small):
-            heappush(self.small, -heappop(self.large))
-
-    def findMedian(self) -> float:
-        if len(self.small) > len(self.large):
-            return -self.small[0]
-
-        return (-self.small[0] + self.large[0]) / 2
-```
-
-Invariant:
-
-```text
-small contains lower half
-large contains upper half
-len(small) >= len(large)
-max(small) <= min(large)
-```
-
----
-
-# 19. Pattern 11: Linked Lists
-
-Typical LeetCode definition:
-
-```python
-class ListNode:
-    def __init__(self, val=0, next=None):
-        self.val = val
-        self.next = next
-```
-
-## Reverse linked list
-
-```python
-def reverse_list(head):
-    prev = None
-    curr = head
-
-    while curr:
-        nxt = curr.next
-        curr.next = prev
-        prev = curr
-        curr = nxt
-
-    return prev
-```
-
-Interview explanation:
-
-```text
-Store next before rewiring current.next.
-Move prev and curr forward.
-```
-
----
-
-## Find middle
-
-```python
-def middle_node(head):
-    slow = fast = head
-
-    while fast and fast.next:
-        slow = slow.next
-        fast = fast.next.next
-
-    return slow
-```
-
----
-
-## Detect cycle
-
-```python
-def has_cycle(head):
-    slow = fast = head
-
-    while fast and fast.next:
-        slow = slow.next
-        fast = fast.next.next
-
-        if slow is fast:
-            return True
-
-    return False
-```
-
-Use `is`, not `==`, because you want same object identity.
-
----
-
-## Merge two sorted lists
-
-```python
-def merge_two_lists(l1, l2):
-    dummy = ListNode()
-    cur = dummy
-
-    while l1 and l2:
-        if l1.val <= l2.val:
-            cur.next = l1
-            l1 = l1.next
-        else:
-            cur.next = l2
-            l2 = l2.next
-
-        cur = cur.next
-
-    cur.next = l1 or l2
-    return dummy.next
-```
-
----
-
-## Remove nth from end
-
-```python
-def remove_nth_from_end(head, n):
-    dummy = ListNode(0, head)
-    fast = slow = dummy
-
-    for _ in range(n):
-        fast = fast.next
-
-    while fast.next:
-        fast = fast.next
-        slow = slow.next
-
-    slow.next = slow.next.next
-
-    return dummy.next
-```
-
-Dummy nodes reduce edge-case bugs.
-
----
-
-# 20. Pattern 12: Trees
-
-Typical LeetCode tree:
-
-```python
-class TreeNode:
-    def __init__(self, val=0, left=None, right=None):
-        self.val = val
-        self.left = left
-        self.right = right
-```
-
-## Recursive DFS
-
-```python
-def inorder(root):
-    res = []
-
-    def dfs(node):
-        if not node:
-            return
-
-        dfs(node.left)
-        res.append(node.val)
-        dfs(node.right)
-
-    dfs(root)
-    return res
-```
-
----
-
-## Iterative inorder
-
-```python
-def inorder_iter(root):
-    res = []
-    stack = []
-    curr = root
-
-    while curr or stack:
-        while curr:
-            stack.append(curr)
-            curr = curr.left
-
-        curr = stack.pop()
-        res.append(curr.val)
-        curr = curr.right
-
-    return res
-```
-
----
-
-## Max depth
-
-```python
-def max_depth(root):
-    if not root:
-        return 0
-
-    return 1 + max(max_depth(root.left), max_depth(root.right))
-```
-
----
-
-## Diameter of binary tree
-
-```python
-def diameter_of_binary_tree(root):
-    best = 0
-
-    def height(node):
-        nonlocal best
-
-        if not node:
-            return 0
-
-        left = height(node.left)
-        right = height(node.right)
-
-        best = max(best, left + right)
-
-        return 1 + max(left, right)
-
-    height(root)
-    return best
-```
-
-Use `nonlocal` to modify outer variable.
-
----
-
-## Lowest common ancestor
-
-For general binary tree:
-
-```python
-def lowest_common_ancestor(root, p, q):
-    if not root or root is p or root is q:
-        return root
-
-    left = lowest_common_ancestor(root.left, p, q)
-    right = lowest_common_ancestor(root.right, p, q)
-
-    if left and right:
-        return root
-
-    return left or right
-```
-
-For BST:
-
-```python
-def lca_bst(root, p, q):
-    while root:
-        if p.val < root.val and q.val < root.val:
-            root = root.left
-        elif p.val > root.val and q.val > root.val:
-            root = root.right
-        else:
-            return root
-```
-
----
-
-## Validate BST
-
-Wrong approach:
-
-```python
-node.left.val < node.val < node.right.val
-```
-
-This only checks local children.
-
-Correct:
-
-```python
-def is_valid_bst(root):
-    def dfs(node, lo, hi):
-        if not node:
-            return True
-
-        if not (lo < node.val < hi):
-            return False
-
-        return dfs(node.left, lo, node.val) and dfs(node.right, node.val, hi)
-
-    return dfs(root, float("-inf"), float("inf"))
-```
-
----
-
-# 21. Pattern 13: Graphs
-
-## Build adjacency list
-
-Undirected:
-
-```python
-from collections import defaultdict
-
-graph = defaultdict(list)
-
-for u, v in edges:
-    graph[u].append(v)
-    graph[v].append(u)
-```
-
-Directed:
-
-```python
-graph = defaultdict(list)
-
-for u, v in edges:
-    graph[u].append(v)
-```
-
-If nodes are `0..n-1`, list is faster:
-
-```python
-graph = [[] for _ in range(n)]
-
-for u, v in edges:
-    graph[u].append(v)
-```
-
----
-
-## DFS connected components
-
-```python
-def count_components(n, edges):
-    graph = [[] for _ in range(n)]
-
-    for u, v in edges:
-        graph[u].append(v)
-        graph[v].append(u)
-
-    visited = set()
-
-    def dfs(node):
-        visited.add(node)
-
-        for nei in graph[node]:
-            if nei not in visited:
-                dfs(nei)
-
-    count = 0
-
-    for node in range(n):
-        if node not in visited:
-            count += 1
-            dfs(node)
-
-    return count
-```
-
-Iterative to avoid recursion depth:
-
-```python
-def dfs_iter(start, graph, visited):
-    stack = [start]
-    visited.add(start)
-
-    while stack:
-        node = stack.pop()
-
-        for nei in graph[node]:
-            if nei not in visited:
-                visited.add(nei)
-                stack.append(nei)
-```
-
----
-
-## Topological sort: Kahn’s algorithm
-
-```python
-from collections import deque
-
-def can_finish(num_courses, prerequisites):
-    graph = [[] for _ in range(num_courses)]
-    indegree = [0] * num_courses
-
-    for course, pre in prerequisites:
-        graph[pre].append(course)
-        indegree[course] += 1
-
-    q = deque([i for i in range(num_courses) if indegree[i] == 0])
-    taken = 0
-
-    while q:
-        node = q.popleft()
-        taken += 1
-
-        for nei in graph[node]:
-            indegree[nei] -= 1
-            if indegree[nei] == 0:
-                q.append(nei)
-
-    return taken == num_courses
-```
-
-Use when:
-
-```text
-DAG
-course schedule
-build order
-dependency resolution
-```
-
----
-
-## Topological sort with DFS cycle detection
-
-```python
-def can_finish(num_courses, prerequisites):
-    graph = [[] for _ in range(num_courses)]
-
-    for course, pre in prerequisites:
-        graph[pre].append(course)
-
-    state = [0] * num_courses
-    # 0 = unvisited, 1 = visiting, 2 = done
-
-    def dfs(node):
-        if state[node] == 1:
-            return False
-        if state[node] == 2:
-            return True
-
-        state[node] = 1
-
-        for nei in graph[node]:
-            if not dfs(nei):
-                return False
-
-        state[node] = 2
-        return True
-
-    return all(dfs(i) for i in range(num_courses))
-```
-
----
-
-## Dijkstra
-
-Use when:
-
-```text
-weighted graph
-non-negative edge weights
-shortest path
-```
-
-```python
-from heapq import heappush, heappop
-from math import inf
-
-def dijkstra(n, graph, start):
-    dist = [inf] * n
-    dist[start] = 0
-
-    heap = [(0, start)]
-
-    while heap:
-        d, node = heappop(heap)
-
-        if d != dist[node]:
-            continue
-
-        for nei, w in graph[node]:
-            nd = d + w
-
-            if nd < dist[nei]:
-                dist[nei] = nd
-                heappush(heap, (nd, nei))
-
-    return dist
-```
-
-Important:
-
-```python
-if d != dist[node]:
-    continue
-```
-
-This skips stale heap entries.
-
----
-
-## Bellman-Ford
-
-Use when:
-
-```text
-negative edges
-limited stops
-detect negative cycles
-```
-
-For “cheapest flight within K stops”:
-
-```python
-from math import inf
-
-def find_cheapest_price(n, flights, src, dst, k):
-    dist = [inf] * n
-    dist[src] = 0
-
-    for _ in range(k + 1):
-        new_dist = dist[:]
-
-        for u, v, w in flights:
-            if dist[u] != inf and dist[u] + w < new_dist[v]:
-                new_dist[v] = dist[u] + w
-
-        dist = new_dist
-
-    return -1 if dist[dst] == inf else dist[dst]
-```
-
-Why copy?
-
-```text
-Each iteration uses paths with at most that many edges.
-Without copy, you accidentally use more edges in same round.
-```
-
----
-
-# 22. Pattern 14: Union-Find / DSU
-
-Use when:
-
-```text
-connectivity
-components
-cycle detection in undirected graph
-Kruskal MST
-dynamic merging
-```
-
-```python
-class DSU:
-    def __init__(self, n):
-        self.parent = list(range(n))
-        self.rank = [0] * n
-        self.count = n
-
-    def find(self, x):
-        while x != self.parent[x]:
-            self.parent[x] = self.parent[self.parent[x]]
-            x = self.parent[x]
-        return x
-
-    def union(self, a, b):
-        ra = self.find(a)
-        rb = self.find(b)
-
-        if ra == rb:
-            return False
-
-        if self.rank[ra] < self.rank[rb]:
-            ra, rb = rb, ra
-
-        self.parent[rb] = ra
-
-        if self.rank[ra] == self.rank[rb]:
-            self.rank[ra] += 1
-
-        self.count -= 1
-        return True
-```
-
-Cycle detection:
-
-```python
-def valid_tree(n, edges):
-    if len(edges) != n - 1:
-        return False
-
-    dsu = DSU(n)
-
-    for u, v in edges:
-        if not dsu.union(u, v):
-            return False
-
-    return dsu.count == 1
-```
-
----
-
-# 23. Pattern 15: Trie
-
-Use when:
-
-```text
-prefix matching
-word search
-autocomplete
-dictionary of words
-```
-
-## Trie with dict nodes
-
-```python
-class Trie:
-    def __init__(self):
-        self.root = {}
-
-    def insert(self, word):
-        node = self.root
-
-        for ch in word:
-            node = node.setdefault(ch, {})
-
-        node["#"] = True
-
-    def search(self, word):
-        node = self.root
-
-        for ch in word:
-            if ch not in node:
-                return False
-            node = node[ch]
-
-        return "#" in node
-
-    def startsWith(self, prefix):
-        node = self.root
-
-        for ch in prefix:
-            if ch not in node:
-                return False
-            node = node[ch]
-
-        return True
-```
-
-`"#"` marks end of word.
-
----
-
-# 24. Pattern 16: Backtracking
-
-Use when:
-
-```text
-generate all combinations/permutations/subsets
-search decision tree
-constraint satisfaction
-```
-
-## Subsets
-
-```python
-def subsets(nums):
-    res = []
-    path = []
-
-    def backtrack(i):
-        if i == len(nums):
-            res.append(path[:])
-            return
-
-        path.append(nums[i])
-        backtrack(i + 1)
-        path.pop()
-
-        backtrack(i + 1)
-
-    backtrack(0)
-    return res
-```
-
-Critical:
-
-```python
-res.append(path[:])
-```
-
-You must copy the path. Otherwise all results reference same list.
-
----
-
-## Combinations
-
-```python
-def combine(n, k):
-    res = []
-    path = []
-
-    def backtrack(start):
-        if len(path) == k:
-            res.append(path[:])
-            return
-
-        for x in range(start, n + 1):
-            path.append(x)
-            backtrack(x + 1)
-            path.pop()
-
-    backtrack(1)
-    return res
-```
-
-Pruning:
-
-```python
-remaining_needed = k - len(path)
-for x in range(start, n - remaining_needed + 2):
-    ...
-```
-
----
-
-## Permutations
-
-```python
-def permute(nums):
-    res = []
-    path = []
-    used = [False] * len(nums)
-
-    def backtrack():
-        if len(path) == len(nums):
-            res.append(path[:])
-            return
-
-        for i, x in enumerate(nums):
-            if used[i]:
-                continue
-
-            used[i] = True
-            path.append(x)
-
-            backtrack()
-
-            path.pop()
-            used[i] = False
-
-    backtrack()
-    return res
-```
-
----
-
-## Word search
-
-```python
-def exist(board, word):
-    rows, cols = len(board), len(board[0])
-
-    def dfs(r, c, i):
-        if i == len(word):
-            return True
-
-        if (
-            r < 0 or r == rows
-            or c < 0 or c == cols
-            or board[r][c] != word[i]
-        ):
-            return False
-
-        temp = board[r][c]
-        board[r][c] = "#"
-
-        found = (
-            dfs(r + 1, c, i + 1)
-            or dfs(r - 1, c, i + 1)
-            or dfs(r, c + 1, i + 1)
-            or dfs(r, c - 1, i + 1)
-        )
-
-        board[r][c] = temp
-        return found
-
-    for r in range(rows):
-        for c in range(cols):
-            if dfs(r, c, 0):
-                return True
-
-    return False
-```
-
-Important:
-
-```text
-Mark visited.
-Restore after recursion.
-```
-
----
-
-# 25. Pattern 17: Dynamic Programming
-
-DP is not a syntax problem. It is a state-definition problem.
-
-Always answer:
-
-```text
-1. What does dp state mean?
-2. What choices/transitions exist?
-3. What is the base case?
-4. What is the answer?
-5. Can space be optimized?
-```
-
----
-
-## Memoized recursion
-
-```python
-from functools import lru_cache
-
-def fib(n):
-    @lru_cache(None)
-    def dp(i):
-        if i <= 1:
-            return i
-        return dp(i - 1) + dp(i - 2)
-
-    return dp(n)
-```
-
----
-
-## Climbing stairs
-
-```python
-def climb_stairs(n):
-    if n <= 2:
-        return n
-
-    a, b = 1, 2
-
-    for _ in range(3, n + 1):
-        a, b = b, a + b
-
-    return b
-```
-
----
-
-## House robber
-
-```python
-def rob(nums):
-    prev2 = 0
-    prev1 = 0
-
-    for x in nums:
-        cur = max(prev1, prev2 + x)
-        prev2 = prev1
-        prev1 = cur
-
-    return prev1
-```
-
-State:
-
-```text
-prev1 = best up to previous house
-prev2 = best up to house before previous
-```
-
----
-
-## Coin change minimum coins
-
 ```python
-def coin_change(coins, amount):
-    INF = amount + 1
-    dp = [INF] * (amount + 1)
-    dp[0] = 0
-
-    for a in range(1, amount + 1):
-        for coin in coins:
-            if a >= coin:
-                dp[a] = min(dp[a], dp[a - coin] + 1)
-
-    return -1 if dp[amount] == INF else dp[amount]
+connect("localhost", 8080, timeout=10)
 ```
 
----
+This is useful in real code, but interview functions are usually simple.
 
-## 0/1 Knapsack style
+## 5.4 Nested Helpers
 
-Each item used once:
+Nested helpers are idiomatic in coding interviews because they keep helper state
+close to the main function.
 
 ```python
-def can_partition(nums):
+def outer(nums):
     total = sum(nums)
 
-    if total % 2:
-        return False
+    def helper(i):
+        return nums[i] + total
 
-    target = total // 2
-    dp = [False] * (target + 1)
-    dp[0] = True
-
-    for x in nums:
-        for s in range(target, x - 1, -1):
-            dp[s] = dp[s] or dp[s - x]
-
-    return dp[target]
+    return helper(0)
 ```
 
-Why reverse loop?
+## 5.5 `nonlocal` vs `global`
+
+Use `nonlocal` to reassign a variable from the nearest enclosing function scope.
+
+```python
+def outer():
+    best = 0
+
+    def update(x):
+        nonlocal best
+        best = max(best, x)
+
+    update(5)
+    return best
+```
+
+Without `nonlocal`, assigning `best` inside `update` creates a new local
+variable.
+
+Use `global` only for module-level globals. Avoid it in interviews.
+
+> **TIP:** If a helper only needs to mutate a list or dict, you do not need
+> `nonlocal` because you are mutating the object, not rebinding the name.
+
+## 5.6 Closure Late Binding
+
+Closures capture variables, not their values at the time the function is
+created.
+
+Bad:
+
+```python
+funcs = []
+for i in range(3):
+    funcs.append(lambda: i)
+
+print([f() for f in funcs])  # [2, 2, 2]
+```
+
+Good:
+
+```python
+funcs = []
+for i in range(3):
+    funcs.append(lambda i=i: i)
+```
+
+Rare in DSA code, but important Python knowledge.
+
+## 5.7 Lambdas
+
+Use lambdas for small key functions:
+
+```python
+items.sort(key=lambda x: x[1])
+```
+
+Avoid complex lambdas. Use a named helper when logic is non-trivial.
+
+## 5.8 Exceptions: EAFP vs LBYL
+
+Python often uses EAFP:
 
 ```text
-Reverse prevents using same item multiple times.
+Easier to Ask Forgiveness than Permission
 ```
-
-Unbounded knapsack loops forward:
-
-```python
-for coin in coins:
-    for amount in range(coin, target + 1):
-        ...
-```
-
----
-
-## Longest Increasing Subsequence O(n log n)
-
-```python
-from bisect import bisect_left
-
-def length_of_lis(nums):
-    tails = []
-
-    for x in nums:
-        i = bisect_left(tails, x)
-
-        if i == len(tails):
-            tails.append(x)
-        else:
-            tails[i] = x
-
-    return len(tails)
-```
-
-Meaning:
-
-```text
-tails[i] = smallest possible tail of an increasing subsequence of length i + 1
-```
-
----
-
-## Grid DP
-
-Unique paths:
-
-```python
-def unique_paths(m, n):
-    dp = [1] * n
-
-    for _ in range(1, m):
-        for c in range(1, n):
-            dp[c] += dp[c - 1]
-
-    return dp[-1]
-```
-
-Minimum path sum:
-
-```python
-def min_path_sum(grid):
-    rows, cols = len(grid), len(grid[0])
-    dp = [float("inf")] * cols
-    dp[0] = 0
-
-    for r in range(rows):
-        dp[0] += grid[r][0]
-
-        for c in range(1, cols):
-            dp[c] = min(dp[c], dp[c - 1]) + grid[r][c]
-
-    return dp[-1]
-```
-
----
-
-## Interval DP
-
-Use when:
-
-```text
-problem over ranges
-merge stones
-burst balloons
-matrix chain multiplication
-palindrome partitioning
-```
-
-Burst balloons:
-
-```python
-def max_coins(nums):
-    arr = [1] + nums + [1]
-    n = len(arr)
-
-    dp = [[0] * n for _ in range(n)]
-
-    for length in range(2, n):
-        for left in range(0, n - length):
-            right = left + length
-
-            for last in range(left + 1, right):
-                coins = arr[left] * arr[last] * arr[right]
-                dp[left][right] = max(
-                    dp[left][right],
-                    dp[left][last] + coins + dp[last][right]
-                )
-
-    return dp[0][n - 1]
-```
-
-Mental model:
-
-```text
-Choose the last balloon burst inside interval (left, right).
-```
-
----
-
-# 26. Pattern 18: Bit Manipulation
-
-## Single number
-
-```python
-def single_number(nums):
-    ans = 0
-
-    for x in nums:
-        ans ^= x
-
-    return ans
-```
-
-Because:
-
-```text
-x ^ x = 0
-x ^ 0 = x
-```
-
----
-
-## Check bit
-
-```python
-if mask & (1 << i):
-    ...
-```
-
-Set bit:
-
-```python
-mask |= 1 << i
-```
-
-Clear bit:
-
-```python
-mask &= ~(1 << i)
-```
-
-Toggle bit:
-
-```python
-mask ^= 1 << i
-```
-
----
-
-## Iterate subsets of mask
-
-```python
-sub = mask
-
-while sub:
-    # use sub
-    sub = (sub - 1) & mask
-```
-
-Include empty subset:
-
-```python
-sub = mask
-while True:
-    # use sub
-    if sub == 0:
-        break
-    sub = (sub - 1) & mask
-```
-
----
-
-# 27. Pattern 19: Design Problems
-
-Design problems test API correctness, data structures, and invariants.
-
-## LRU Cache
-
-Use `OrderedDict` for interview speed:
-
-```python
-from collections import OrderedDict
-
-class LRUCache:
-    def __init__(self, capacity: int):
-        self.capacity = capacity
-        self.cache = OrderedDict()
-
-    def get(self, key: int) -> int:
-        if key not in self.cache:
-            return -1
-
-        self.cache.move_to_end(key)
-        return self.cache[key]
-
-    def put(self, key: int, value: int) -> None:
-        if key in self.cache:
-            self.cache.move_to_end(key)
-
-        self.cache[key] = value
-
-        if len(self.cache) > self.capacity:
-            self.cache.popitem(last=False)
-```
-
-Staff-level explanation:
-
-```text
-Hash map gives O(1) lookup.
-Ordered dictionary maintains recency order.
-move_to_end marks key as most recently used.
-popitem(last=False) evicts least recently used.
-```
-
-Manual implementation may be requested. Know the invariant:
-
-```text
-dict: key -> node
-doubly linked list: least recent near head, most recent near tail
-```
-
----
-
-## RandomizedSet
-
-```python
-import random
-
-class RandomizedSet:
-    def __init__(self):
-        self.arr = []
-        self.pos = {}
-
-    def insert(self, val: int) -> bool:
-        if val in self.pos:
-            return False
-
-        self.pos[val] = len(self.arr)
-        self.arr.append(val)
-        return True
-
-    def remove(self, val: int) -> bool:
-        if val not in self.pos:
-            return False
-
-        idx = self.pos[val]
-        last = self.arr[-1]
-
-        self.arr[idx] = last
-        self.pos[last] = idx
-
-        self.arr.pop()
-        del self.pos[val]
-
-        return True
-
-    def getRandom(self) -> int:
-        return random.choice(self.arr)
-```
-
-Key trick:
-
-```text
-Remove in O(1) by swapping with last element.
-```
-
----
-
-## TimeMap
-
-```python
-from collections import defaultdict
-from bisect import bisect_right
-
-class TimeMap:
-    def __init__(self):
-        self.store = defaultdict(list)
-
-    def set(self, key: str, value: str, timestamp: int) -> None:
-        self.store[key].append((timestamp, value))
-
-    def get(self, key: str, timestamp: int) -> str:
-        arr = self.store[key]
-
-        i = bisect_right(arr, (timestamp, chr(255))) - 1
-
-        if i >= 0:
-            return arr[i][1]
-
-        return ""
-```
-
-Why `(timestamp, chr(255))`?
-
-```text
-Tuples compare by first element, then second.
-We need the rightmost pair with timestamp <= query timestamp.
-```
-
-Alternative clearer binary search:
-
-```python
-def get(self, key, timestamp):
-    arr = self.store[key]
-    l, r = 0, len(arr) - 1
-    ans = ""
-
-    while l <= r:
-        mid = (l + r) // 2
-
-        if arr[mid][0] <= timestamp:
-            ans = arr[mid][1]
-            l = mid + 1
-        else:
-            r = mid - 1
-
-    return ans
-```
-
----
-
-# 28. Advanced Structures You Should Know
-
-## Fenwick Tree / Binary Indexed Tree
-
-Use when:
-
-```text
-point updates
-prefix sums
-range sum queries
-count smaller elements
-inversion count
-```
-
-```python
-class Fenwick:
-    def __init__(self, n):
-        self.n = n
-        self.bit = [0] * (n + 1)
-
-    def add(self, i, delta):
-        i += 1
-        while i <= self.n:
-            self.bit[i] += delta
-            i += i & -i
-
-    def sum(self, i):
-        i += 1
-        total = 0
-        while i > 0:
-            total += self.bit[i]
-            i -= i & -i
-        return total
-
-    def range_sum(self, l, r):
-        return self.sum(r) - (self.sum(l - 1) if l > 0 else 0)
-```
-
----
-
-## Segment Tree
-
-Use when:
-
-```text
-range queries + updates
-min/max/sum/gcd over range
-```
-
-Iterative segment tree for range sum:
-
-```python
-class SegmentTree:
-    def __init__(self, nums):
-        self.n = len(nums)
-        self.tree = [0] * (2 * self.n)
-
-        for i in range(self.n):
-            self.tree[self.n + i] = nums[i]
-
-        for i in range(self.n - 1, 0, -1):
-            self.tree[i] = self.tree[2 * i] + self.tree[2 * i + 1]
-
-    def update(self, idx, val):
-        i = idx + self.n
-        self.tree[i] = val
-
-        i //= 2
-        while i:
-            self.tree[i] = self.tree[2 * i] + self.tree[2 * i + 1]
-            i //= 2
-
-    def query(self, l, r):
-        # inclusive [l, r]
-        l += self.n
-        r += self.n
-        total = 0
-
-        while l <= r:
-            if l % 2 == 1:
-                total += self.tree[l]
-                l += 1
-
-            if r % 2 == 0:
-                total += self.tree[r]
-                r -= 1
-
-            l //= 2
-            r //= 2
-
-        return total
-```
-
----
-
-# 29. Python Class Patterns for LeetCode
-
-## Simple class
-
-```python
-class Solution:
-    def solve(self, nums: list[int]) -> int:
-        ...
-```
-
-## Nested helper function
-
-```python
-class Solution:
-    def maxDepth(self, root):
-        def dfs(node):
-            if not node:
-                return 0
-            return 1 + max(dfs(node.left), dfs(node.right))
-
-        return dfs(root)
-```
-
-## Use `self` only when needed
-
-```python
-class Solution:
-    def diameterOfBinaryTree(self, root):
-        self.best = 0
-
-        def height(node):
-            if not node:
-                return 0
-
-            left = height(node.left)
-            right = height(node.right)
-
-            self.best = max(self.best, left + right)
-            return 1 + max(left, right)
-
-        height(root)
-        return self.best
-```
-
-Alternative:
-
-```python
-best = 0
-
-def height(node):
-    nonlocal best
-    ...
-```
-
-Use `nonlocal` for enclosing function variables. Use `self` for object fields.
-
----
-
-# 30. The Staff-Level Coding Interview Bar
-
-At staff level, they are not just checking whether you memorized templates. They are checking whether you can drive ambiguity to a clean model.
-
-Your answer should sound like this:
-
-```text
-Let me restate the problem.
-I’ll clarify constraints and edge cases.
-The brute force is O(...).
-The bottleneck is ...
-I can improve it with ...
-The invariant is ...
-I’ll implement the simpler correct version first.
-Then I’ll test edge cases.
-```
-
-## What to say before coding
 
 Example:
 
-```text
-We need longest subarray with sum k.
-Brute force checks all O(n^2) subarrays.
-Because subarray sums can be represented as prefix sums, 
-if prefix[j] - prefix[i] = k, then prefix[i] = prefix[j] - k.
-So I’ll scan once and store earliest index of each prefix sum.
-That gives O(n) time and O(n) space.
+```python
+try:
+    value = d[key]
+except KeyError:
+    value = 0
 ```
 
-This is staff-level communication: model, invariant, complexity.
+LBYL:
+
+```python
+if key in d:
+    value = d[key]
+else:
+    value = 0
+```
+
+In interviews, LBYL is often clearer unless exception handling is central to
+the task.
 
 ---
 
-# 31. Problem Recognition Map
+# 6. Core Built-ins and Idioms
 
-| Problem Clue                          | Likely Pattern                             |
-| ------------------------------------- | ------------------------------------------ |
-| “subarray”, “substring”, “contiguous” | sliding window or prefix sum               |
-| “longest substring with at most…”     | sliding window                             |
-| “sum equals k” with negatives         | prefix sum hashmap                         |
-| “sorted array”                        | binary search / two pointers               |
-| “k largest / smallest”                | heap                                       |
-| “top k frequent”                      | Counter + heap or bucket sort              |
-| “merge k sorted”                      | heap                                       |
-| “intervals”                           | sort + merge / sweep line                  |
-| “minimum number of rooms/resources”   | heap or sweep line                         |
-| “shortest path unweighted”            | BFS                                        |
-| “shortest path weighted nonnegative”  | Dijkstra                                   |
-| “dependencies / course schedule”      | topological sort                           |
-| “connect components dynamically”      | DSU                                        |
-| “prefix search / dictionary words”    | trie                                       |
-| “all combinations/permutations”       | backtracking                               |
-| “optimal choice over sequence”        | DP                                         |
-| “range update many times”             | difference array                           |
-| “range query with updates”            | Fenwick/segment tree                       |
-| “next greater/smaller”                | monotonic stack                            |
-| “sliding max/min”                     | monotonic deque                            |
-| “palindrome / pair in sorted”         | two pointers                               |
-| “cycle in linked list”                | fast/slow pointers                         |
-| “copy random linked list”             | hashmap or interweaving                    |
-| “least recently used”                 | hashmap + doubly linked list / OrderedDict |
-
----
-
-# 32. Edge Cases Checklist
-
-Before finalizing, test mentally:
-
-```text
-empty input
-one element
-two elements
-all same values
-duplicates
-negative numbers
-zero
-very large values
-already sorted
-reverse sorted
-disconnected graph
-cycle graph
-single-node tree
-skewed tree
-target absent
-k = 0
-k = n
-overlapping intervals at boundary
-```
-
-For Python-specific testing:
-
-```text
-Does slicing copy too much?
-Am I using pop(0)?
-Did I mutate shared rows in a 2D list?
-Did I forget to copy path in backtracking?
-Did I use // with negative numbers?
-Did I rely on recursion too deeply?
-Did heap tie-breaking compare non-comparable objects?
-```
-
----
-
-# 33. Python One-Liners That Are Actually Useful
-
-Use only when readable.
+## 6.1 Imports Worth Knowing
 
 ```python
-nums = list(map(int, input().split()))
+from collections import defaultdict, Counter, deque, OrderedDict
+from heapq import heappush, heappop, heappushpop, heapreplace, heapify, nlargest, nsmallest
+from bisect import bisect_left, bisect_right, insort
+from functools import cache, lru_cache, cmp_to_key
+from math import inf, gcd, lcm, isqrt
+from itertools import count, chain, product, pairwise, accumulate, combinations, permutations
+from operator import itemgetter, attrgetter
 ```
 
-```python
-freq = Counter(nums)
-```
+Do not paste all imports blindly. Know what they are for.
 
-```python
-graph = [[] for _ in range(n)]
-```
-
-```python
-grid = [[0] * cols for _ in range(rows)]
-```
-
-```python
-pairs.sort(key=lambda x: (x[0], -x[1]))
-```
-
-```python
-return all(x > 0 for x in nums)
-```
-
-```python
-return any(word in s for word in words)
-```
-
-```python
-res = [x * x for x in nums if x > 0]
-```
-
-But avoid clever unreadable one-liners in interviews. Clear code beats flashy code.
-
----
-
-# 34. Python Built-ins You Must Know Cold
+## 6.2 Essential Built-ins
 
 ```python
 len(x)
@@ -7014,500 +693,3148 @@ ord(ch)
 chr(num)
 ```
 
-## `enumerate`
+## 6.3 `enumerate`
 
 ```python
 for i, x in enumerate(nums):
     ...
 ```
 
-## `zip`
+With custom start:
 
 ```python
-for a, b in zip(arr1, arr2):
+for rank, item in enumerate(items, start=1):
     ...
 ```
 
-## Reverse
+## 6.4 `zip`
+
+```python
+for a, b in zip(left, right):
+    ...
+```
+
+> **PITFALL:** `zip` stops at the shortest iterable.
+
+```python
+list(zip([1, 2], [3]))  # [(1, 3)]
+```
+
+If mismatched lengths matter, check them.
+
+## 6.5 `any` and `all`
+
+```python
+if any(x < 0 for x in nums):
+    ...
+```
+
+```python
+if all(x >= 0 for x in nums):
+    ...
+```
+
+They short-circuit.
+
+> **TRICK:** Prefer generator expressions inside `any` and `all`; do not build
+> a list unless you need it.
+
+Good:
+
+```python
+any(x > 10 for x in nums)
+```
+
+Wasteful:
+
+```python
+any([x > 10 for x in nums])
+```
+
+## 6.6 `min` and `max`
+
+```python
+best = max(nums)
+```
+
+With key:
+
+```python
+longest = max(words, key=len)
+```
+
+Default for empty iterables:
+
+```python
+best = max(nums, default=0)
+```
+
+## 6.7 `sum`
+
+Good for numbers:
+
+```python
+total = sum(nums)
+```
+
+Bad for list concatenation:
+
+```python
+flat = sum(list_of_lists, [])  # O(n^2)-ish behavior
+```
+
+Better:
+
+```python
+from itertools import chain
+
+flat = list(chain.from_iterable(list_of_lists))
+```
+
+## 6.8 `reversed`
 
 ```python
 for x in reversed(nums):
     ...
 ```
 
-`reversed(nums)` returns an iterator.
+`reversed(nums)` returns an iterator, not a list.
 
-To get list:
+Materialize if needed:
 
 ```python
-list(reversed(nums))
+rev = list(reversed(nums))
 ```
 
-For strings:
+String reverse:
 
 ```python
 s[::-1]
 ```
 
-But slicing copies.
+This copies.
+
+## 6.9 `map` and `filter`
+
+Common for parsing:
+
+```python
+nums = list(map(int, input().split()))
+```
+
+For readability, list comprehensions are often better:
+
+```python
+nums = [int(x) for x in input().split()]
+```
+
+## 6.10 `itertools`
+
+Useful tools:
+
+```python
+from itertools import count, chain, product, pairwise, accumulate, combinations, permutations
+```
+
+Tie-break counter for heaps:
+
+```python
+from itertools import count
+
+counter = count()
+next(counter)
+```
+
+Cartesian product:
+
+```python
+for r, c in product(range(rows), range(cols)):
+    ...
+```
+
+Flatten:
+
+```python
+flat = list(chain.from_iterable(matrix))
+```
+
+> **TIP:** Use `itertools` when it makes intent clearer. Avoid using it to hide
+> simple logic from the interviewer.
+
+## 6.11 `operator`
+
+For sorting by tuple/object fields:
+
+```python
+from operator import itemgetter, attrgetter
+
+pairs.sort(key=itemgetter(1))
+users.sort(key=attrgetter("age"))
+```
+
+Equivalent lambdas are fine:
+
+```python
+pairs.sort(key=lambda x: x[1])
+```
+
+## 6.12 Coding-Round Python Tricks, Without Problem Solutions
+
+This section is not an algorithm template library. It is the small Python
+surface area that repeatedly appears while implementing algorithms.
+
+### Tuple States
+
+Use tuples for immutable compound state:
+
+```python
+state = (row, col, mask)
+seen.add(state)
+```
+
+Why:
+
+```text
+tuples are lightweight
+tuples are hashable if contents are hashable
+tuples unpack cleanly
+tuples compare lexicographically for sorting/heaps
+```
+
+> **PITFALL:** A tuple containing a list is still unhashable:
+
+```python
+hash((1, [2, 3]))  # TypeError
+```
+
+### Sentinel Values
+
+Use explicit sentinels when `None` may be a valid value:
+
+```python
+MISSING = object()
+
+value = d.get(key, MISSING)
+if value is MISSING:
+    ...
+```
+
+Use infinities for numeric best/worst:
+
+```python
+best = float("inf")
+worst = float("-inf")
+```
+
+> **STAFF NOTE:** Sentinels make edge cases explicit. They avoid bugs where
+> `0`, `""`, `False`, or `None` are valid data.
+
+### `enumerate`, `zip`, and `pairwise`
+
+```python
+for i, x in enumerate(nums):
+    ...
+```
+
+```python
+for a, b in zip(left, right):
+    ...
+```
+
+Python 3.10+:
+
+```python
+from itertools import pairwise
+
+for prev, curr in pairwise(nums):
+    ...
+```
+
+> **PITFALL:** `zip` truncates to the shortest input. `pairwise` yields nothing
+> for fewer than two elements.
+
+### Prefix-Like Running Values With `accumulate`
+
+```python
+from itertools import accumulate
+
+running = list(accumulate(nums))
+```
+
+With an initial value:
+
+```python
+running = list(accumulate(nums, initial=0))
+```
+
+> **TIP:** `accumulate` is clean for simple running totals. For custom logic or
+> interview clarity, a normal loop can be better.
+
+### Heap Push-Pop Operations
+
+```python
+from heapq import heappushpop, heapreplace
+```
+
+`heappushpop(heap, x)` pushes `x`, then pops and returns the smallest item. It
+is often faster than separate push then pop.
+
+`heapreplace(heap, x)` pops the smallest item first, then pushes `x`. The heap
+must be non-empty.
+
+> **PITFALL:** `heappushpop` and `heapreplace` are not interchangeable. If the
+> new item may be smaller than the current heap minimum, they return different
+> results.
+
+### `bisect_left` and `bisect_right`
+
+```python
+from bisect import bisect_left, bisect_right
+
+lo = bisect_left(arr, x)
+hi = bisect_right(arr, x)
+```
+
+Use this wording:
+
+```text
+bisect_left: first index with value >= x
+bisect_right: first index with value > x
+```
+
+### `@cache`
+
+```python
+from functools import cache
+
+@cache
+def f(i, state):
+    ...
+```
+
+Use only with hashable arguments.
+
+> **PITFALL:** If `state` is a list, convert it to a tuple first.
+
+### `math.isqrt`
+
+```python
+from math import isqrt
+
+r = isqrt(n)
+```
+
+Use for exact integer square roots. It avoids float precision issues.
+
+### `int.bit_count`
+
+```python
+ones = mask.bit_count()
+```
+
+Counts set bits in an integer.
+
+### Bit Length
+
+```python
+bits = n.bit_length()
+```
+
+Returns the number of bits needed to represent a non-negative integer in
+binary, excluding sign and leading zeros.
+
+### Fixed-Size Count Arrays
+
+When keys are known small integers or lowercase English letters, a list can be
+faster and simpler than a dict:
+
+```python
+count = [0] * 26
+idx = ord(ch) - ord("a")
+count[idx] += 1
+```
+
+> **PITFALL:** This is only correct when the character set is guaranteed. For
+> arbitrary Unicode or arbitrary keys, use a dict or `Counter`.
+
+### When Not to Use Python Convenience
+
+| Convenience | Avoid when |
+|---|---|
+| slicing | inside large loops/recursion where copy cost matters |
+| recursion | depth can exceed the recursion limit |
+| `defaultdict` | reading missing keys must not mutate the map |
+| `Counter` | zero-count keys break distinct-count logic |
+| `sortedcontainers` | platform availability is not confirmed |
+| `bisect.insort` | you need true O(log n) ordered insertion |
+| `deepcopy` | in a hot path |
+| clever comprehensions | interviewer cannot inspect the logic quickly |
+
+> **STAFF NOTE:** Staff signal is not using every Python feature. Staff signal
+> is knowing exactly when a convenience turns into a hidden cost.
 
 ---
 
-# 35. Python Math Tools
+# 7. Data Structures and Complexity
+
+## 7.1 Summary Table
+
+| Structure | Use for | Key costs |
+|---|---|---|
+| `list` | array, stack, table | index O(1), append amortized O(1), pop-end O(1) |
+| `tuple` | immutable record, key | index O(1), hashable if contents hashable |
+| `str` | text | index O(1), slice O(k), concat copies |
+| `dict` | hash map | avg lookup/insert/delete O(1) |
+| `set` | membership, dedup | avg add/remove/in O(1) |
+| `deque` | queue, both-end ops | append/pop both ends O(1) |
+| `Counter` | frequency/multiset | dict-like |
+| `defaultdict` | grouping/counting | dict-like, auto-creates on missing access |
+| `heapq` | priority queue | push/pop O(log n), peek O(1), heapify O(n) |
+| `bisect` | binary search sorted list | search O(log n), insertion O(n) |
+| `OrderedDict` | recency order | O(1) move-to-end/pop front |
+
+## 7.2 `list`
+
+Python `list` is a dynamic array of object references.
+
+Fast:
 
 ```python
-import math
+arr[i]
+arr.append(x)
+arr.pop()
+arr[-1]
+```
 
-math.gcd(a, b)
-math.lcm(a, b)
-math.inf
-math.sqrt(x)
-math.isqrt(x)
+Potentially expensive:
+
+```python
+arr.pop(0)
+arr.insert(0, x)
+x in arr
+arr[a:b]
+```
+
+Costs:
+
+| Operation | Cost |
+|---|---:|
+| index read/write | O(1) |
+| append | amortized O(1) |
+| pop end | O(1) |
+| pop front | O(n) |
+| insert/delete middle | O(n) |
+| membership | O(n) |
+| slice length k | O(k) |
+| sort | O(n log n) |
+
+> **INTERNAL:** CPython lists over-allocate capacity, so repeated append is
+> amortized O(1). Front or middle operations still shift references.
+
+## 7.3 `tuple`
+
+Tuples are immutable sequences.
+
+Use them for:
+
+```text
+coordinates
+compound dictionary keys
+heap records
+multiple return values
+lightweight records
+```
+
+```python
+point = (row, col)
+```
+
+Hashable only if all contents are hashable:
+
+```python
+hash((1, "a"))      # ok
+hash((1, []))       # TypeError
+```
+
+Tuple comparison is lexicographic:
+
+```python
+(1, 2) < (1, 3)  # True
+```
+
+## 7.4 `dict`
+
+Python `dict` is a hash table.
+
+```python
+d = {}
+d[key] = value
+value = d[key]
+```
+
+Safe lookup:
+
+```python
+value = d.get(key, default)
+```
+
+Membership tests keys:
+
+```python
+if key in d:
+    ...
+```
+
+Iteration:
+
+```python
+for key in d:
+    ...
+
+for key, value in d.items():
+    ...
+```
+
+> **INTERNAL:** Modern Python dicts preserve insertion order as a language
+> guarantee. They are still not sorted by key.
+
+> **PITFALL:** Mutating a dict while iterating over it can raise an error or
+> produce bad logic. Iterate over `list(d)` if you need to delete keys.
+
+## 7.5 `set`
+
+```python
+seen = set()
+seen.add(x)
+if x in seen:
+    ...
+```
+
+Empty set:
+
+```python
+seen = set()
+```
+
+Not:
+
+```python
+seen = {}  # dict
+```
+
+Set operations:
+
+```python
+a & b   # intersection
+a | b   # union
+a - b   # difference
+a ^ b   # symmetric difference
+```
+
+Remove:
+
+```python
+seen.remove(x)   # KeyError if absent
+seen.discard(x)  # no error if absent
+```
+
+> **PITFALL:** Set iteration order is not a sorted order. Do not rely on it for
+> deterministic sorted output.
+
+## 7.6 `deque`
+
+```python
+from collections import deque
+
+q = deque()
+q.append(x)
+q.appendleft(x)
+q.pop()
+q.popleft()
+```
+
+All four end operations are O(1).
+
+Use `deque` for queues and both-end workloads.
+
+> **PITFALL:** `deque` is not a replacement for random-access arrays. Indexing
+> into the middle is not what it is optimized for.
+
+## 7.7 `Counter`
+
+```python
+from collections import Counter
+
+freq = Counter(items)
+```
+
+Useful operations:
+
+```python
+freq[x]
+freq.most_common(k)
+freq.update(items)
+freq.subtract(items)
+```
+
+Important behavior:
+
+```python
+freq = Counter("a")
+freq["a"] -= 1
+print(freq)  # Counter({'a': 0})
+```
+
+Zero counts may remain.
+
+> **PITFALL:** If you use `len(freq)` to mean number of positive-count keys,
+> delete keys when count reaches zero.
+
+Counter arithmetic drops non-positive counts:
+
+```python
+Counter(a=2) - Counter(a=2)  # Counter()
+```
+
+This differs from direct assignment/subtraction.
+
+## 7.8 `defaultdict`
+
+```python
+from collections import defaultdict
+
+groups = defaultdict(list)
+groups[key].append(value)
+
+count = defaultdict(int)
+count[x] += 1
+```
+
+> **PITFALL:** Pass the factory, not a value.
+
+Correct:
+
+```python
+defaultdict(list)
+```
+
+Wrong:
+
+```python
+defaultdict([])
+```
+
+> **PITFALL:** Reading a missing key creates it.
+
+```python
+d = defaultdict(list)
+d["missing"]
+print(d)  # now has "missing"
+```
+
+Use `key in d` or `d.get(key)` if you do not want mutation.
+
+## 7.9 `OrderedDict`
+
+Modern dicts preserve insertion order, but `OrderedDict` has explicit recency
+operations.
+
+```python
+from collections import OrderedDict
+
+d = OrderedDict()
+d.move_to_end(key)
+d.popitem(last=False)
+```
+
+Use when the operation is about moving keys to the end or popping the oldest.
+
+## 7.10 `heapq`
+
+`heapq` implements a min-heap over a list.
+
+```python
+from heapq import heappush, heappop, heapify
+
+heap = []
+heappush(heap, item)
+item = heappop(heap)
+smallest = heap[0]
+```
+
+Costs:
+
+| Operation | Cost |
+|---|---:|
+| push | O(log n) |
+| pop | O(log n) |
+| peek | O(1) |
+| heapify | O(n) |
+
+Max-heap for numeric priorities:
+
+```python
+heappush(heap, -x)
+x = -heappop(heap)
+```
+
+> **PITFALL:** Tuple heap entries compare field by field. If priorities tie,
+> Python compares the next field.
+
+Risky:
+
+```python
+heappush(heap, (priority, obj))
+```
+
+Safe:
+
+```python
+from itertools import count
+
+counter = count()
+heappush(heap, (priority, next(counter), obj))
+```
+
+> **TIP:** `heapq.nlargest(k, items)` and `heapq.nsmallest(k, items)` are clean
+> for small `k`. For large `k`, sorting may be simpler and faster.
+
+> **PITFALL:** `heapq` has no built-in efficient delete or decrease-key. Use
+> lazy deletion with an auxiliary dict/set when needed.
+
+## 7.11 `bisect`
+
+```python
+from bisect import bisect_left, bisect_right
+
+i = bisect_left(arr, x)   # first index where arr[i] >= x
+j = bisect_right(arr, x)  # first index where arr[i] > x
+```
+
+Count equal values:
+
+```python
+count_x = bisect_right(arr, x) - bisect_left(arr, x)
+```
+
+`bisect` works on sorted lists.
+
+> **PITFALL:** `insort` is O(n), not O(log n), because list insertion shifts
+> elements. The binary search part is O(log n), but insertion dominates.
+
+> **PITFALL:** The `key=` parameter added in Python 3.10 is applied to array
+> elements for searching, but not to the raw `x` value in the same way you may
+> expect. For complex cases, precompute keys or be explicit.
+
+> **PITFALL:** The `bisect` functions are not designed for concurrent mutation
+> of the same list by multiple threads.
+
+## 7.12 `sortedcontainers`
+
+If available:
+
+```python
+from sortedcontainers import SortedList, SortedDict, SortedSet
+```
+
+They fill the Java `TreeMap` / `TreeSet` gap.
+
+Use only after confirming availability.
+
+> **SAY THIS:** "Python's standard library does not have a sorted map. If
+> `sortedcontainers` is allowed, I can use it. Otherwise I need a different
+> design."
+
+---
+
+# 8. Sorting, Comparison, and Ordering
+
+## 8.1 `sort` vs `sorted`
+
+In-place:
+
+```python
+arr.sort()
+```
+
+New list:
+
+```python
+b = sorted(arr)
+```
+
+> **PITFALL:** `arr.sort()` returns `None`.
+
+Bad:
+
+```python
+arr = arr.sort()
+```
+
+Good:
+
+```python
+arr.sort()
+```
+
+## 8.2 `key=`
+
+```python
+items.sort(key=lambda x: x.score)
+```
+
+Tuples for multiple keys:
+
+```python
+items.sort(key=lambda x: (x.primary, x.secondary))
+```
+
+Descending numeric secondary:
+
+```python
+items.sort(key=lambda x: (x.primary, -x.score))
+```
+
+## 8.3 Stable Sort
+
+Python sort is stable: equal keys keep their original relative order.
+
+This allows multi-pass sorting:
+
+```python
+items.sort(key=lambda x: x.secondary)
+items.sort(key=lambda x: x.primary)
+```
+
+After the second sort, items are sorted by primary, with secondary order
+preserved inside equal primary groups.
+
+> **INTERNAL:** Python uses Timsort, which is stable and adaptive. It can take
+> advantage of existing order in the data.
+
+## 8.4 Tuple Ordering
+
+Tuples compare lexicographically:
+
+```python
+(1, 2, 9) < (1, 3, 0)  # True
+```
+
+This is useful in sorting and heaps.
+
+> **PITFALL:** Tuple comparison can accidentally compare objects you did not
+> intend to compare. Add a numeric tie-breaker when needed.
+
+## 8.5 `cmp_to_key`
+
+Python sorting prefers `key=`, not comparator functions. If true pairwise
+comparison is needed:
+
+```python
+from functools import cmp_to_key
+
+def cmp(a, b):
+    if a < b:
+        return -1
+    if a > b:
+        return 1
+    return 0
+
+items.sort(key=cmp_to_key(cmp))
+```
+
+> **TIP:** Use `cmp_to_key` rarely. Most interview sorting is cleaner with
+> `key=`.
+
+## 8.6 `operator.itemgetter` and `attrgetter`
+
+```python
+from operator import itemgetter, attrgetter
+
+pairs.sort(key=itemgetter(1))
+users.sort(key=attrgetter("age"))
+```
+
+These are clean alternatives to simple lambdas.
+
+## 8.7 Custom Object Ordering
+
+If objects need ordering:
+
+```python
+from dataclasses import dataclass
+
+@dataclass(order=True)
+class Item:
+    priority: int
+    name: str
+```
+
+For heap entries where only priority should compare:
+
+```python
+from dataclasses import dataclass, field
+from typing import Any
+
+@dataclass(order=True)
+class PrioritizedItem:
+    priority: int
+    item: Any = field(compare=False)
+```
+
+> **STAFF NOTE:** In interviews, tuple entries are often simpler than custom
+> ordering classes. Use a class only if it improves clarity.
+
+---
+
+# 9. Numbers, Math, and Precision
+
+## 9.1 Integers
+
+Python `int` has arbitrary precision.
+
+```python
+10 ** 100
+```
+
+No overflow:
+
+```python
+2**63
+```
+
+> **JAVA DEV TRAP:** If a problem expects 32-bit overflow behavior, Python will
+> not overflow for you. You must check bounds manually.
+
+Common bounds:
+
+```python
+INT_MIN = -2**31
+INT_MAX = 2**31 - 1
+```
+
+## 9.2 Division
+
+```python
+7 / 2    # 3.5
+7 // 2   # 3
+-7 // 2  # -4
+```
+
+Python `//` floors toward negative infinity.
+
+Java integer division truncates toward zero.
+
+For truncation toward zero:
+
+```python
+def trunc_div(a: int, b: int) -> int:
+    sign = -1 if (a < 0) ^ (b < 0) else 1
+    return sign * (abs(a) // abs(b))
+```
+
+> **PITFALL:** Do not use `int(a / b)` for large integers. `/` creates a float
+> and can lose precision.
+
+## 9.3 Modulo
+
+```python
+7 % 3    # 1
+-7 % 3   # 2
+```
+
+Python modulo result has the sign of the divisor.
+
+This is often convenient for normalization:
+
+```python
+i = (i + delta) % n
+```
+
+## 9.4 Ceiling Division
+
+For positive integers:
+
+```python
+ceil = (a + b - 1) // b
+```
+
+General integer ceiling division:
+
+```python
+ceil = -(-a // b)
+```
+
+## 9.5 `pow`
+
+```python
+pow(a, b)
+```
+
+Modular exponentiation:
+
+```python
+pow(a, b, mod)
+```
+
+This is efficient and avoids huge intermediate values.
+
+## 9.6 `math`
+
+```python
+from math import inf, gcd, lcm, isqrt
 ```
 
 Integer square root:
 
 ```python
-math.isqrt(10)    # 3
+r = isqrt(n)
 ```
 
-Useful for primality:
+> **PITFALL:** Prefer `math.isqrt` over `int(math.sqrt(n))` for integer
+> arithmetic. It avoids floating-point precision issues.
+
+## 9.7 Floating Point
 
 ```python
-def is_prime(n):
-    if n < 2:
-        return False
-
-    d = 2
-    while d * d <= n:
-        if n % d == 0:
-            return False
-        d += 1
-
-    return True
+0.1 + 0.2 == 0.3  # False
 ```
 
----
-
-# 36. Java Habits to Drop Immediately
-
-## Do not write verbose classes for everything
-
-Java instinct:
-
-```java
-class Pair {
-    int x;
-    int y;
-}
-```
-
-Python interview style:
+Compare with tolerance:
 
 ```python
-(x, y)
+abs(a - b) < 1e-9
 ```
 
-Or:
+Infinity:
 
 ```python
-row, col, dist = item
-```
-
----
-
-## Do not manually count if `Counter` is clearer
-
-Manual is fine, but this is faster to write:
-
-```python
-freq = Counter(nums)
-```
-
----
-
-## Do not simulate Java `TreeMap` with sorted list blindly
-
-This:
-
-```python
-from bisect import insort
-
-insort(arr, x)
-```
-
-is O(n) insertion, not O(log n), because Python list insertion shifts elements. The official `bisect` docs explicitly note that the O(log n) search is dominated by the O(n) insertion step for `insort`. ([Python documentation][3])
-
-For ordered-map problems, consider:
-
-```text
-heap
-two heaps
-monotonic deque
-offline sorting
-Fenwick tree
-segment tree
-coordinate compression
-```
-
----
-
-## Do not overuse recursion
-
-Java recursion may pass where Python fails due to recursion limit. For graph DFS, iterative is often safer.
-
----
-
-# 37. Full Template Library
-
-## Graph adjacency
-
-```python
-def build_graph(n, edges, directed=False):
-    graph = [[] for _ in range(n)]
-
-    for u, v in edges:
-        graph[u].append(v)
-        if not directed:
-            graph[v].append(u)
-
-    return graph
-```
-
----
-
-## Grid directions
-
-```python
-DIRS4 = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-DIRS8 = [
-    (1, 0), (-1, 0), (0, 1), (0, -1),
-    (1, 1), (1, -1), (-1, 1), (-1, -1)
-]
-```
-
----
-
-## Bounds check
-
-```python
-def inside(r, c, rows, cols):
-    return 0 <= r < rows and 0 <= c < cols
-```
-
----
-
-## Backtracking skeleton
-
-```python
-def backtrack(state):
-    if is_solution(state):
-        res.append(build_answer(state))
-        return
-
-    for choice in choices(state):
-        if invalid(choice):
-            continue
-
-        make(choice)
-        backtrack(state)
-        undo(choice)
-```
-
----
-
-## Memoized DP skeleton
-
-```python
-from functools import lru_cache
-
-@lru_cache(None)
-def dp(i, state):
-    if base_case:
-        return value
-
-    ans = initial
-
-    for choice in choices:
-        ans = best(ans, transition)
-
-    return ans
-```
-
----
-
-## Binary search answer skeleton
-
-```python
-def solve():
-    lo, hi = min_possible, max_possible
-
-    while lo < hi:
-        mid = (lo + hi) // 2
-
-        if feasible(mid):
-            hi = mid
-        else:
-            lo = mid + 1
-
-    return lo
-```
-
----
-
-## Dijkstra skeleton
-
-```python
-from heapq import heappush, heappop
 from math import inf
 
-def dijkstra(graph, start, n):
-    dist = [inf] * n
-    dist[start] = 0
-    heap = [(0, start)]
+best = inf
+worst = -inf
+```
 
-    while heap:
-        d, node = heappop(heap)
+## 9.8 NaN
 
-        if d != dist[node]:
-            continue
+```python
+nan = float("nan")
+nan == nan  # False
+```
 
-        for nei, w in graph[node]:
-            nd = d + w
+> **PITFALL:** NaN is not equal to itself. If floats are involved, know whether
+> NaN can appear.
 
-            if nd < dist[nei]:
-                dist[nei] = nd
-                heappush(heap, (nd, nei))
+## 9.9 Decimal and Fraction
 
-    return dist
+For exact decimal arithmetic:
+
+```python
+from decimal import Decimal
+```
+
+For exact rational arithmetic:
+
+```python
+from fractions import Fraction
+```
+
+Rare in coding interviews, but useful to know.
+
+---
+
+# 10. Strings and Unicode
+
+## 10.1 Strings Are Immutable
+
+Bad for repeated building:
+
+```python
+s = ""
+for ch in chars:
+    s += ch
+```
+
+Better:
+
+```python
+parts = []
+for ch in chars:
+    parts.append(ch)
+
+s = "".join(parts)
+```
+
+> **PITFALL:** Repeated string concatenation can create many intermediate
+> strings. Use list accumulation and join for large builds.
+
+## 10.2 Common String Methods
+
+```python
+s.lower()
+s.upper()
+s.casefold()
+s.strip()
+s.split()
+s.split(",")
+s.join(parts)
+s.startswith(prefix)
+s.endswith(suffix)
+s.find(sub)
+s.count(sub)
+s.isalpha()
+s.isdigit()
+s.isalnum()
+```
+
+`find` returns `-1` when absent.
+
+## 10.3 `ord` and `chr`
+
+```python
+ord("a")  # 97
+chr(97)   # "a"
+```
+
+Lowercase English index:
+
+```python
+i = ord(ch) - ord("a")
+```
+
+> **PITFALL:** This only works for known lowercase English letters. Ask about
+> character set if the prompt is ambiguous.
+
+## 10.4 Slicing
+
+```python
+s[::-1]
+s[l:r]
+```
+
+Slicing creates a new string.
+
+> **PITFALL:** Slicing inside loops or recursion can silently change complexity.
+
+## 10.5 Unicode
+
+Python strings are Unicode.
+
+```python
+len("a")  # 1
+```
+
+But user-perceived characters can be more complex than code points.
+
+Case-insensitive comparison:
+
+```python
+s.casefold()
+```
+
+`casefold` is more aggressive than `lower` for Unicode.
+
+> **STAFF NOTE:** Most coding interviews use ASCII/lowercase assumptions. If
+> not stated, ask. Unicode correctness can change the design.
+
+---
+
+# 11. Iteration, Generators, and Comprehensions
+
+## 11.1 Iterables vs Iterators
+
+An iterable can produce an iterator:
+
+```python
+for x in nums:
+    ...
+```
+
+An iterator is consumed as you use it:
+
+```python
+it = iter([1, 2, 3])
+list(it)  # [1, 2, 3]
+list(it)  # []
+```
+
+> **PITFALL:** `map`, `filter`, `zip`, `enumerate`, and many `itertools`
+> objects are lazy iterators. Once consumed, they are empty.
+
+## 11.2 `range`
+
+```python
+range(10)
+```
+
+`range` is lazy and memory-efficient.
+
+Materialize only if needed:
+
+```python
+list(range(10))
+```
+
+## 11.3 List Comprehensions
+
+```python
+squares = [x * x for x in nums]
+positives = [x for x in nums if x > 0]
+```
+
+2D initialization:
+
+```python
+grid = [[0] * cols for _ in range(rows)]
+```
+
+> **PITFALL:** Do not write `[[0] * cols] * rows`; it aliases rows.
+
+## 11.4 Set and Dict Comprehensions
+
+```python
+seen = {x for x in nums}
+index = {value: i for i, value in enumerate(nums)}
+```
+
+## 11.5 Generator Expressions
+
+```python
+total = sum(x * x for x in nums)
+```
+
+No list is built.
+
+Good:
+
+```python
+any(x < 0 for x in nums)
+```
+
+Wasteful:
+
+```python
+any([x < 0 for x in nums])
+```
+
+## 11.6 Nested Comprehensions
+
+Flatten:
+
+```python
+flat = [x for row in matrix for x in row]
+```
+
+Read order is the same as nested loops:
+
+```python
+for row in matrix:
+    for x in row:
+        ...
+```
+
+> **TIP:** If a comprehension needs more than two clauses or complex
+> conditions, a normal loop is often clearer in interviews.
+
+---
+
+# 12. Copying, Aliasing, and Mutability
+
+## 12.1 Assignment Does Not Copy
+
+```python
+b = a
+```
+
+This aliases the same object.
+
+## 12.2 Shallow Copies
+
+Lists:
+
+```python
+b = a[:]
+b = list(a)
+b = a.copy()
+```
+
+Dicts:
+
+```python
+d2 = d.copy()
+```
+
+Sets:
+
+```python
+s2 = s.copy()
+```
+
+## 12.3 Deep Copies
+
+```python
+import copy
+
+b = copy.deepcopy(a)
+```
+
+> **PITFALL:** Deep copy is expensive. Avoid it in hot loops unless absolutely
+> necessary.
+
+## 12.4 Nested Structures
+
+```python
+a = [[1], [2]]
+b = a.copy()
+b[0].append(99)
+print(a)  # [[1, 99], [2]]
+```
+
+The outer list was copied. Inner lists were shared.
+
+## 12.5 Repetition
+
+Safe:
+
+```python
+arr = [0] * n
+```
+
+Dangerous:
+
+```python
+grid = [[]] * n
+```
+
+All rows point to the same list.
+
+Correct:
+
+```python
+grid = [[] for _ in range(n)]
+```
+
+## 12.6 Chained Assignment
+
+Dangerous with mutables:
+
+```python
+a = b = []
+a.append(1)
+print(b)  # [1]
+```
+
+Use separate objects:
+
+```python
+a = []
+b = []
 ```
 
 ---
 
-# 38. Mini Interview Walkthrough Example
+# 13. Caching and Memoization Mechanics
 
-Problem:
-
-```text
-Given an array nums and integer k, return the number of subarrays with sum k.
-```
-
-Staff-level reasoning:
-
-```text
-Brute force is O(n^2): check all subarrays.
-A subarray sum from i+1 to j equals prefix[j] - prefix[i].
-We need prefix[i] = prefix[j] - k.
-So while scanning, count how many previous prefix sums equal current_prefix - k.
-Use hashmap frequency.
-```
-
-Code:
+## 13.1 `cache` and `lru_cache`
 
 ```python
-from collections import defaultdict
+from functools import cache, lru_cache
 
-def subarray_sum(nums, k):
-    count = defaultdict(int)
-    count[0] = 1
+@cache
+def f(x):
+    ...
 
-    prefix = 0
-    ans = 0
-
-    for x in nums:
-        prefix += x
-
-        ans += count[prefix - k]
-
-        count[prefix] += 1
-
-    return ans
+@lru_cache(maxsize=None)
+def g(x):
+    ...
 ```
 
-Test:
+`cache` is equivalent to an unbounded cache.
+
+Use `lru_cache(None)` if older platform compatibility matters.
+
+## 13.2 Arguments Must Be Hashable
+
+Good:
 
 ```python
-nums = [1, 1, 1], k = 2
-prefix scan:
-0 seen once
-prefix 1: need -1 -> 0
-prefix 2: need 0 -> +1
-prefix 3: need 1 -> +1
-answer = 2
+@cache
+def f(i: int, state: tuple[int, ...]):
+    ...
 ```
 
-Complexity:
+Bad:
+
+```python
+@cache
+def f(state: list[int]):
+    ...
+```
+
+Lists are unhashable.
+
+## 13.3 Cache Lifetime
+
+The cache persists as long as the function object persists.
+
+For module-level functions:
+
+```python
+f.cache_clear()
+```
+
+Use nested functions when cache should belong to one call:
+
+```python
+def solve(nums):
+    @cache
+    def helper(i):
+        ...
+```
+
+## 13.4 Method Cache Trap
+
+```python
+class Solution:
+    @lru_cache(None)
+    def helper(self, i):
+        ...
+```
+
+Here `self` is part of the cache key.
+
+> **PITFALL:** Caching instance methods can keep instances alive and create
+> surprising memory behavior. In interviews, prefer nested cached helpers
+> inside the method.
+
+## 13.5 Cache Is for Pure Computation
+
+Do not cache functions that:
 
 ```text
-Time: O(n)
-Space: O(n)
+depend on time
+depend on randomness
+mutate state
+return fresh mutable objects that callers modify
+perform I/O
 ```
 
-This is exactly how you should present solutions.
+> **STAFF NOTE:** Memoization is a correctness decision as well as a performance
+> decision. It assumes same arguments imply same result.
 
 ---
 
-# 39. The Final Python Interview Cheat Sheet
+# 14. Classes, Dataclasses, and Custom Objects
 
-## Imports
+## 14.1 Basic Class Syntax
+
+```python
+class Node:
+    def __init__(self, value):
+        self.value = value
+        self.next = None
+```
+
+`self` is explicit.
+
+## 14.2 Instance vs Class Attributes
+
+Class attribute:
+
+```python
+class Bad:
+    items = []
+```
+
+All instances share `items`.
+
+Instance attribute:
+
+```python
+class Good:
+    def __init__(self):
+        self.items = []
+```
+
+> **PITFALL:** Mutable class attributes are shared across instances. This is the
+> class-level cousin of mutable default arguments.
+
+## 14.3 Dataclasses
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class User:
+    id: int
+    name: str
+```
+
+With ordering:
+
+```python
+@dataclass(order=True)
+class Item:
+    priority: int
+    name: str
+```
+
+Exclude a field from comparison:
+
+```python
+from dataclasses import field
+from typing import Any
+
+@dataclass(order=True)
+class Entry:
+    priority: int
+    item: Any = field(compare=False)
+```
+
+## 14.4 NamedTuple
+
+```python
+from typing import NamedTuple
+
+class Point(NamedTuple):
+    row: int
+    col: int
+```
+
+Named tuples are immutable, tuple-like, and hashable if fields are hashable.
+
+## 14.5 `__eq__` and `__hash__`
+
+Objects used as dict keys or set elements must be hashable.
+
+Rule:
+
+```text
+If a == b, then hash(a) must equal hash(b).
+```
+
+> **PITFALL:** If you define custom equality on a mutable object, making it
+> hashable can be dangerous. Mutating a key after insertion can corrupt lookup
+> logic.
+
+## 14.6 `__lt__` and Ordering
+
+Heaps and sorting may need `<`.
+
+Prefer:
+
+```python
+items.sort(key=lambda x: x.priority)
+```
+
+Over defining custom comparison unless needed.
+
+## 14.7 `__slots__`
+
+```python
+class Node:
+    __slots__ = ("value", "next")
+
+    def __init__(self, value):
+        self.value = value
+        self.next = None
+```
+
+`__slots__` can reduce per-instance memory by avoiding an instance `__dict__`.
+
+Rarely necessary in interviews, but useful staff-level Python knowledge.
+
+## 14.8 OOP Concepts in Python
+
+Python supports object-oriented programming, but it is more dynamic than Java.
+
+Core ideas:
+
+```text
+encapsulation by convention, not access modifiers
+inheritance when there is a real is-a relationship
+composition when behavior should be assembled from smaller objects
+polymorphism through duck typing
+interfaces through abstract base classes or protocols
+```
+
+## 14.9 Encapsulation
+
+Python does not have Java-style `private`.
+
+Conventions:
+
+```python
+class Service:
+    def __init__(self):
+        self.public = 1
+        self._internal = 2
+        self.__name_mangled = 3
+```
+
+Meaning:
+
+```text
+public: normal public attribute
+_internal: intended for internal use by convention
+__name_mangled: name-mangled to reduce subclass collisions, not true privacy
+```
+
+> **STAFF NOTE:** Python privacy is cultural and API-based. Design clear public
+> interfaces rather than relying on enforced access control.
+
+## 14.10 Composition vs Inheritance
+
+Prefer composition when behavior is optional or replaceable:
+
+```python
+class ReportService:
+    def __init__(self, storage, renderer):
+        self.storage = storage
+        self.renderer = renderer
+```
+
+Use inheritance when subclasses truly share an is-a relationship and a stable
+contract.
+
+> **JAVA DEV TRAP:** Do not create deep inheritance hierarchies just because
+> Java would. Python code often stays cleaner with small objects and
+> composition.
+
+## 14.11 Polymorphism and Duck Typing
+
+Python cares more about behavior than declared type.
+
+```python
+def write_all(writer, rows):
+    for row in rows:
+        writer.write(row)
+```
+
+Any object with a compatible `write` method works.
+
+> **SAY THIS:** "In Python I usually depend on behavior, not concrete classes.
+> If this were production code, I would document the expected protocol or use a
+> `Protocol` type for static checking."
+
+## 14.12 Abstract Base Classes and Protocols
+
+Abstract base class:
+
+```python
+from abc import ABC, abstractmethod
+
+class Store(ABC):
+    @abstractmethod
+    def get(self, key: str) -> str | None:
+        ...
+```
+
+Protocol:
+
+```python
+from typing import Protocol
+
+class Writer(Protocol):
+    def write(self, value: str) -> None:
+        ...
+```
+
+Difference:
+
+```text
+ABC: nominal interface; class explicitly inherits
+Protocol: structural interface; object matches by having required methods
+```
+
+## 14.13 `@property`
+
+```python
+class Account:
+    def __init__(self, balance: int):
+        self._balance = balance
+
+    @property
+    def balance(self) -> int:
+        return self._balance
+```
+
+Use properties when attribute access should remain simple but computation or
+validation is needed.
+
+> **PITFALL:** Avoid surprising expensive work in properties. Attribute access
+> should feel cheap unless clearly documented.
+
+## 14.14 `@classmethod` and `@staticmethod`
+
+Class method receives the class:
+
+```python
+class User:
+    def __init__(self, name: str):
+        self.name = name
+
+    @classmethod
+    def from_email(cls, email: str):
+        return cls(email.split("@")[0])
+```
+
+Static method receives neither `self` nor `cls`:
+
+```python
+class Math:
+    @staticmethod
+    def clamp(x, lo, hi):
+        return max(lo, min(hi, x))
+```
+
+Rule of thumb:
+
+```text
+instance method: needs object state
+class method: alternate constructor or class-level polymorphism
+static method: namespacing helper with no object/class state
+```
+
+## 14.15 MRO and `super`
+
+Python uses method resolution order (MRO), especially important with multiple
+inheritance.
+
+```python
+class Child(Parent):
+    def __init__(self):
+        super().__init__()
+```
+
+View MRO:
+
+```python
+Child.mro()
+```
+
+> **STAFF NOTE:** Multiple inheritance can be powerful, but production Python
+> usually favors simple inheritance trees, mixins with narrow behavior, and
+> composition.
+
+---
+
+# 15. CPython Internals That Matter
+
+## 15.1 CPython vs Python
+
+Python is the language. CPython is the most common implementation.
+
+Most interview platforms use CPython.
+
+## 15.2 Object Model
+
+Every Python object has:
+
+```text
+identity
+type
+value
+reference count, in CPython
+```
+
+This explains:
+
+```text
+assignment aliases
+mutability bugs
+object overhead
+identity vs equality
+```
+
+## 15.3 Reference Counting and Garbage Collection
+
+CPython primarily uses reference counting. When an object's reference count
+drops to zero, it can be deallocated.
+
+Cycles are handled by a cyclic garbage collector.
+
+> **STAFF NOTE:** You almost never need to mention this in coding interviews,
+> but it explains why holding references in caches or globals can keep objects
+> alive.
+
+More precise staff-level model:
+
+```text
+Reference counting handles most cleanup immediately.
+The cyclic GC handles reference cycles that refcounting alone cannot reclaim.
+Objects with finalizers can make cycle cleanup more subtle.
+Long-lived caches, globals, closures, and thread locals can keep objects alive.
+```
+
+Example cycle:
+
+```python
+a = []
+a.append(a)
+```
+
+`a` references itself. Reference counting alone cannot free it while the cycle
+exists; the cyclic garbage collector is responsible for detecting it.
+
+Useful modules:
+
+```python
+import gc
+import sys
+
+sys.getrefcount(obj)
+gc.collect()
+```
+
+> **PITFALL:** `sys.getrefcount(obj)` itself temporarily adds a reference while
+> measuring, so the number is usually one higher than you expect.
+
+## 15.4 Small Integer Caching
+
+CPython caches small integers, commonly `-5` through `256`.
+
+```python
+a = 256
+b = 256
+a is b  # may be True in CPython
+```
+
+Do not rely on this.
+
+```python
+a == b  # value equality
+```
+
+## 15.5 String Interning
+
+Some strings may be interned, especially identifier-like strings.
+
+This can make `is` appear to work for strings.
+
+Do not rely on it.
+
+## 15.6 List Internals
+
+Python lists are arrays of pointers.
+
+Consequences:
+
+```text
+indexing is O(1)
+append is amortized O(1)
+front/middle insertion and deletion shift elements
+list stores references, not inline primitive values
+```
+
+CPython list growth is over-allocated. The exact formula is an implementation
+detail and can change, but the important behavior is stable:
+
+```text
+append is amortized O(1)
+occasional resize copies references to a larger backing array
+front and middle insert/delete shift references and stay O(n)
+```
+
+> **STAFF NOTE:** Say "amortized O(1)" for append, not "always O(1)." That
+> small precision sounds senior.
+
+## 15.7 Dict and Set Internals
+
+Dicts and sets are hash tables.
+
+Average:
+
+```text
+lookup O(1)
+insert O(1)
+delete O(1)
+```
+
+Worst-case collisions can degrade, but interviews normally use average-case
+unless discussing adversarial input.
+
+Keys must be hashable.
+
+CPython dicts are compact, insertion-ordered hash tables. They resize as they
+fill to preserve efficient probing. The exact load threshold is an
+implementation detail, but the practical model is:
+
+```text
+more entries -> occasional resize
+resize rehashes/repositions table entries
+individual insert is usually O(1)
+over many inserts, cost is amortized O(1)
+```
+
+Hash collisions:
+
+```text
+equal objects must have equal hashes
+unequal objects may collide
+collisions require probing/equality checks
+pathological collisions can degrade performance
+```
+
+> **PITFALL:** If a custom object's hash depends on mutable fields and those
+> fields change after insertion into a set/dict, lookup behavior becomes broken.
+
+## 15.8 Hash Randomization
+
+Python randomizes string hashing between processes for security.
+
+Consequence:
+
+```text
+Do not rely on set iteration order.
+Dict insertion order is stable by insertion, not by hash order.
+```
+
+`PYTHONHASHSEED` controls hash randomization:
+
+```bash
+PYTHONHASHSEED=0 python script.py
+```
+
+This can make some hash-based behavior reproducible for debugging, but
+interview code should not depend on hash iteration order.
+
+## 15.9 GIL
+
+CPython has a Global Interpreter Lock.
+
+Staff-level summary:
+
+```text
+Threads do not speed up CPU-bound Python bytecode in standard CPython.
+Threads can still help I/O-bound workloads.
+For CPU-bound parallelism, use multiprocessing or native extensions.
+```
+
+Python 3.13+ has optional free-threaded builds that can disable the GIL, but
+that is not the default assumption for interviews or most production Python
+deployments today.
+
+Why the GIL matters:
+
+```text
+It protects CPython interpreter internals.
+It does not make your multi-step business logic automatically thread-safe.
+It limits CPU-bound parallelism in normal CPython threads.
+It still allows useful concurrency for I/O-bound workloads.
+```
+
+Coding interviews are almost always single-threaded, but this is useful in
+follow-up discussion.
+
+## 15.10 Recursion and the C Stack
+
+Python function calls consume stack frames. CPython protects itself with a
+recursion limit.
+
+```python
+import sys
+
+sys.getrecursionlimit()
+sys.setrecursionlimit(10**6)
+```
+
+> **PITFALL:** Raising the recursion limit too high can crash the interpreter.
+> Prefer iterative code for genuinely deep structures.
+
+---
+
+# 16. Performance and Memory Rules
+
+## 16.1 Hidden O(n) Operations
+
+These are the usual Python performance killers:
+
+```text
+list.pop(0)
+list.insert(0, x)
+x in list
+list slicing in loops
+string += in loops
+bisect.insort into list
+deepcopy in hot loops
+repeated sorting
+recomputing expensive key functions
+```
+
+## 16.2 Prefer C-Implemented Built-ins When Clear
+
+Often faster and clearer:
+
+```python
+sum(nums)
+min(nums)
+max(nums)
+sorted(nums)
+"".join(parts)
+Counter(items)
+```
+
+But do not hide logic just to use a built-in.
+
+## 16.3 Big-O Still Wins
+
+Python constant factors are larger than Java for tight loops.
+
+This means:
+
+```text
+An O(n^2) solution that barely passes in Java may TLE in Python.
+Hidden copies matter more.
+Data-structure choice matters more.
+Pushing work into built-ins can help.
+```
+
+## 16.4 Memory Awareness
+
+Python objects are heavy compared with Java primitives.
+
+Prefer:
+
+```text
+list of ints over many tiny custom objects
+tuple coordinates over Pair objects
+list adjacency for dense 0..n-1 ids
+dict only when keys are sparse or arbitrary
+```
+
+## 16.5 Local Variables
+
+Local variable access is faster than global lookup, but this is rarely the
+first optimization.
+
+Do not contort interview code for micro-optimizations. Fix algorithmic and
+data-structure costs first.
+
+## 16.6 Input/Output
+
+For command-line judges:
+
+```python
+import sys
+
+data = sys.stdin.buffer.read().split()
+```
+
+For line-based input:
+
+```python
+import sys
+
+line = sys.stdin.readline()
+```
+
+Class-method online judges usually do not need manual input parsing.
+
+## 16.7 When Python Convenience Hurts
+
+| Feature | Great for | Avoid when |
+|---|---|---|
+| slicing | small, clear copies | repeated hot-path copies |
+| recursion | shallow tree-like logic | input can be deep or adversarial |
+| `defaultdict` | grouping/counting | missing-key reads must not mutate |
+| `Counter` | quick frequency logic | zero-count keys affect correctness |
+| `sorted` | one-time ordering | repeated re-sorting in a loop |
+| `bisect.insort` | small sorted lists | large dynamic ordered sets |
+| `deepcopy` | rare full clone | performance-sensitive loops |
+| comprehensions | simple transforms | complex branching or side effects |
+| decorators | cross-cutting concerns | hiding control flow or exceptions |
+| generators | streaming large data | result must be reused many times |
+| threads | I/O-bound overlap | CPU-bound pure Python speedup |
+| async | high-concurrency I/O | blocking libraries or CPU-heavy work |
+
+> **STAFF NOTE:** "Pythonic" does not mean "use the shortest feature." It means
+> use the construct whose semantics and cost match the problem.
+
+---
+
+# 17. Production Python: OOP, Context Managers, Decorators, and Generators
+
+This section is for staff+ fluency. These topics may not appear in a classic
+coding round, but they matter in production engineering interviews and Python
+fluency follow-ups.
+
+## 17.1 Production OOP Checklist
+
+Good Python OOP usually means:
+
+```text
+small classes with clear responsibilities
+composition over deep inheritance
+explicit dependencies passed into constructors
+stable public methods
+limited mutable shared state
+dunder methods only when they make the object behave naturally
+type hints that clarify contracts without over-engineering
+```
+
+Ask yourself:
+
+```text
+Does this class own state?
+Does it enforce an invariant?
+Is inheritance truly needed?
+Could a function be clearer?
+Could a dataclass be enough?
+Will equality/hash/ordering be surprising?
+```
+
+> **STAFF NOTE:** Python does not force everything into classes. In Python,
+> using a function instead of a class can be the more senior design choice when
+> no persistent state or polymorphic contract is needed.
+
+## 17.2 Context Managers and `with`
+
+Context managers guarantee setup and cleanup around a block.
+
+Common examples:
+
+```python
+with open(path) as f:
+    data = f.read()
+```
+
+```python
+with lock:
+    shared_state += 1
+```
+
+The protocol:
+
+```python
+class Managed:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+```
+
+`__exit__` runs whether the block succeeds or raises. Returning `True`
+suppresses the exception; returning `False` lets it propagate.
+
+> **PITFALL:** Do not accidentally suppress exceptions from `__exit__` unless
+> that is the intended API.
+
+## 17.3 `contextlib`
+
+Function-based context manager:
+
+```python
+from contextlib import contextmanager
+
+@contextmanager
+def managed_resource():
+    resource = acquire()
+    try:
+        yield resource
+    finally:
+        release(resource)
+```
+
+Multiple dynamic context managers:
+
+```python
+from contextlib import ExitStack
+
+with ExitStack() as stack:
+    resources = [stack.enter_context(open(path)) for path in paths]
+```
+
+> **STAFF NOTE:** In production Python, `with` is the standard shape for files,
+> locks, transactions, temporary overrides, metrics scopes, and cleanup.
+
+## 17.4 Decorators
+
+A decorator wraps a function or class.
+
+Basic function decorator:
+
+```python
+from functools import wraps
+
+def traced(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print(f"calling {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper
+```
+
+Use:
+
+```python
+@traced
+def work(x):
+    return x + 1
+```
+
+> **PITFALL:** Always use `functools.wraps` in production decorators. It
+> preserves metadata like `__name__`, `__doc__`, and annotations.
+
+Decorator with arguments:
+
+```python
+from functools import wraps
+
+def retry(times: int):
+    def outer(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_error = None
+            for _ in range(times):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as exc:
+                    last_error = exc
+            raise last_error
+        return wrapper
+    return outer
+```
+
+> **PITFALL:** A real production retry decorator should handle exception types,
+> backoff, jitter, timeouts, idempotency, and cancellation. The example above is
+> only the shape.
+
+## 17.5 Generators and `yield`
+
+A generator produces values lazily.
+
+```python
+def numbers(n):
+    for i in range(n):
+        yield i
+```
+
+Use:
+
+```python
+for x in numbers(3):
+    ...
+```
+
+Generator benefits:
+
+```text
+lazy evaluation
+lower memory usage
+pipeline-style processing
+natural stream representation
+```
+
+> **PITFALL:** Generators are one-shot iterators. Once consumed, they are empty.
+
+## 17.6 `yield from`
+
+Delegate to another iterable:
+
+```python
+def flatten(rows):
+    for row in rows:
+        yield from row
+```
+
+Equivalent to yielding each item in each row.
+
+## 17.7 Iterator Protocol
+
+An iterator implements:
+
+```python
+__iter__()
+__next__()
+```
+
+Example:
+
+```python
+class Countdown:
+    def __init__(self, start):
+        self.current = start
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current <= 0:
+            raise StopIteration
+        value = self.current
+        self.current -= 1
+        return value
+```
+
+Most interview code does not need custom iterators, but production Python APIs
+often expose iterable objects.
+
+## 17.8 Generator Cleanup
+
+If a generator manages resources, use `try/finally` or a context manager.
+
+```python
+def stream_rows(path):
+    f = open(path)
+    try:
+        for line in f:
+            yield line
+    finally:
+        f.close()
+```
+
+Usually better:
+
+```python
+def stream_rows(path):
+    with open(path) as f:
+        for line in f:
+            yield line
+```
+
+## 17.9 Production Design Rules
+
+```text
+Use context managers for ownership and cleanup.
+Use decorators for cross-cutting behavior, but keep them transparent.
+Use generators for streaming and large data.
+Use classes when state/invariants matter.
+Use functions when behavior is stateless and direct.
+Prefer explicit dependencies over hidden globals.
+```
+
+---
+
+# 18. Concurrency: Threads, Locks, Processes, and Asyncio
+
+Python concurrency is a production topic. It is also a staff-level interview
+topic because it tests whether you understand execution, shared state, and
+failure modes.
+
+## 18.1 The Short Answer
+
+| Need | Use |
+|---|---|
+| I/O-bound concurrency with blocking libraries | `threading` or `ThreadPoolExecutor` |
+| CPU-bound parallelism in normal CPython | `multiprocessing` or `ProcessPoolExecutor` |
+| many concurrent network operations with async libraries | `asyncio` |
+| protect shared in-process state | `Lock`, `RLock`, `Condition`, `Semaphore`, `Queue` |
+| communicate safely between threads | `queue.Queue` |
+| periodic/background work | thread/process/task plus explicit shutdown |
+
+> **SAY THIS:** "In standard CPython, threads are useful for I/O-bound
+> concurrency, but not for speeding up CPU-bound Python bytecode because of the
+> GIL. For CPU-bound parallelism I would use processes or native code."
+
+## 18.2 GIL: Correct Staff-Level Answer
+
+The Global Interpreter Lock means that in standard CPython only one thread
+executes Python bytecode at a time.
+
+Implications:
+
+```text
+CPU-bound Python threads do not scale across cores.
+I/O-bound threads can still improve throughput because threads wait on I/O.
+C extensions may release the GIL during heavy native work.
+Multiprocessing bypasses the GIL by using separate processes.
+The GIL does not make your program logically thread-safe.
+```
+
+Python 3.13+ has optional free-threaded builds that can disable the GIL, but
+that is not the default production or interview assumption.
+
+## 18.3 Threads
+
+```python
+from threading import Thread
+
+def work(item):
+    ...
+
+t = Thread(target=work, args=(item,))
+t.start()
+t.join()
+```
+
+Production guidance:
+
+```text
+name important threads
+avoid daemon threads for critical work
+provide shutdown signals
+join threads during shutdown
+handle exceptions inside worker functions or via futures
+```
+
+> **PITFALL:** Daemon threads can be stopped abruptly during interpreter
+> shutdown. They may not release files, locks, or transactions cleanly.
+
+## 18.4 Locks
+
+Use a lock to protect shared mutable state.
+
+```python
+from threading import Lock
+
+lock = Lock()
+count = 0
+
+def increment():
+    global count
+    with lock:
+        count += 1
+```
+
+Use locks as context managers:
+
+```python
+with lock:
+    critical_section()
+```
+
+> **PITFALL:** The GIL does not make compound operations like "check then act"
+> safe at the business-logic level. Use locks around shared invariants.
+
+## 18.5 `Lock` vs `RLock`
+
+`Lock` is a primitive lock. A thread cannot acquire it twice without deadlock.
+
+`RLock` is re-entrant. The same thread can acquire it multiple times and must
+release it the same number of times.
+
+```python
+from threading import RLock
+
+lock = RLock()
+```
+
+Use `RLock` when recursive or layered code may re-enter the same lock. Prefer
+plain `Lock` when re-entrancy is not needed.
+
+## 18.6 Events, Conditions, Semaphores, and Queues
+
+`Event`: one thread signals others.
+
+```python
+from threading import Event
+
+stop = Event()
+stop.set()
+stop.is_set()
+```
+
+`Condition`: wait until a predicate/state changes.
+
+`Semaphore`: limit concurrent access to a resource.
+
+`queue.Queue`: thread-safe producer/consumer queue.
+
+```python
+from queue import Queue
+
+q = Queue()
+q.put(item)
+item = q.get()
+q.task_done()
+```
+
+> **STAFF NOTE:** Prefer `Queue` over manually sharing a list between threads.
+> It gives you synchronization and clearer producer/consumer semantics.
+
+## 18.7 Deadlocks and Lock Ordering
+
+Deadlock pattern:
+
+```text
+Thread A holds lock1 and waits for lock2.
+Thread B holds lock2 and waits for lock1.
+```
+
+Avoid with:
+
+```text
+consistent global lock ordering
+small critical sections
+timeouts where appropriate
+no blocking I/O while holding locks
+careful callbacks while locked
+```
+
+> **SAY THIS:** "I would define a lock ordering and avoid calling external code
+> while holding the lock."
+
+## 18.8 Thread Pools
+
+```python
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+with ThreadPoolExecutor(max_workers=8) as executor:
+    futures = [executor.submit(fetch, url) for url in urls]
+    for future in as_completed(futures):
+        result = future.result()
+```
+
+Good for blocking I/O tasks.
+
+> **PITFALL:** `future.result()` re-raises exceptions from worker threads. Do
+> not ignore it.
+
+## 18.9 Processes
+
+Use processes for CPU-bound parallel work in standard CPython.
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+
+with ProcessPoolExecutor() as executor:
+    results = list(executor.map(cpu_heavy, items))
+```
+
+Tradeoffs:
+
+```text
+separate memory space
+data must be pickled between processes
+higher startup and communication overhead
+better CPU parallelism for pure Python work
+```
+
+> **PITFALL:** Functions and arguments sent to worker processes must generally
+> be picklable. Lambdas, local functions, open file handles, and live network
+> connections often do not serialize cleanly.
+
+## 18.10 Asyncio
+
+`asyncio` is cooperative concurrency using an event loop.
+
+```python
+import asyncio
+
+async def fetch_one(client, url):
+    return await client.get(url)
+
+async def main(urls):
+    tasks = [fetch_one(client, url) for url in urls]
+    return await asyncio.gather(*tasks)
+```
+
+Use for:
+
+```text
+many concurrent network calls
+async database clients
+async web servers
+high-concurrency I/O workloads
+```
+
+Do not use for:
+
+```text
+CPU-bound speedup
+blocking libraries unless moved to a thread/process
+simple scripts where synchronous code is clearer
+```
+
+> **PITFALL:** Calling blocking code inside an async function blocks the event
+> loop. Use async-compatible libraries or run blocking work in an executor.
+
+## 18.11 Asyncio Concepts
+
+```text
+coroutine: async function result that can be awaited
+task: scheduled coroutine
+event loop: runs tasks cooperatively
+await: yield control until awaited operation is ready
+gather: wait for multiple awaitables
+timeout: prevent waiting forever
+cancel: request task cancellation
+```
+
+Timeout:
+
+```python
+result = await asyncio.wait_for(operation(), timeout=5)
+```
+
+Python 3.11+ structured concurrency:
+
+```python
+async with asyncio.TaskGroup() as tg:
+    tg.create_task(work_one())
+    tg.create_task(work_two())
+```
+
+## 18.12 Production Concurrency Checklist
+
+```text
+What is shared mutable state?
+Who owns shutdown?
+How are exceptions surfaced?
+Are timeouts enforced?
+Is there backpressure?
+Are retries idempotent?
+Are locks held during I/O?
+Can tasks be cancelled safely?
+Is observability present for queue depth, latency, failures, and saturation?
+```
+
+> **STAFF NOTE:** Concurrency bugs are usually ownership bugs. Be explicit
+> about who owns state, who signals shutdown, and how failure propagates.
+
+---
+
+# 19. The Complete Pitfall Catalog
+
+## 19.1 Mutable Default Arguments
+
+Bad:
+
+```python
+def f(path=[]):
+    ...
+```
+
+Good:
+
+```python
+def f(path=None):
+    if path is None:
+        path = []
+```
+
+## 19.2 Aliased 2D Lists
+
+Bad:
+
+```python
+grid = [[0] * cols] * rows
+```
+
+Good:
+
+```python
+grid = [[0] * cols for _ in range(rows)]
+```
+
+## 19.3 List Used as Queue
+
+Bad:
+
+```python
+item = q.pop(0)
+```
+
+Good:
+
+```python
+from collections import deque
+
+item = q.popleft()
+```
+
+## 19.4 Slicing in Hot Paths
+
+Bad:
+
+```python
+part = arr[i:]
+```
+
+inside a large loop.
+
+Prefer indices or views via boundaries.
+
+## 19.5 String Concatenation in a Loop
+
+Bad:
+
+```python
+s += ch
+```
+
+Better:
+
+```python
+parts.append(ch)
+```
+
+then:
+
+```python
+s = "".join(parts)
+```
+
+## 19.6 `sort()` Returns `None`
+
+Bad:
+
+```python
+arr = arr.sort()
+```
+
+Good:
+
+```python
+arr.sort()
+```
+
+## 19.7 `is` vs `==`
+
+Bad:
+
+```python
+if x is 1000:
+    ...
+```
+
+Good:
+
+```python
+if x == 1000:
+    ...
+```
+
+## 19.8 Division with Negatives
+
+```python
+-7 // 2  # -4
+```
+
+If you need truncation toward zero, implement it explicitly.
+
+## 19.9 `/` Produces Float
+
+```python
+6 / 2  # 3.0
+```
+
+Use `//` for integer indices.
+
+## 19.10 Modifying While Iterating
+
+Bad:
+
+```python
+for x in arr:
+    if bad(x):
+        arr.remove(x)
+```
+
+Good:
+
+```python
+arr = [x for x in arr if not bad(x)]
+```
+
+## 19.11 Dict Mutation During Iteration
+
+Bad:
+
+```python
+for key in d:
+    del d[key]
+```
+
+Good:
+
+```python
+for key in list(d):
+    del d[key]
+```
+
+## 19.12 Assignment Is Aliasing
+
+```python
+b = a
+```
+
+does not copy.
+
+## 19.13 Heap Tie Comparisons
+
+Bad:
+
+```python
+heappush(heap, (priority, obj))
+```
+
+Good:
+
+```python
+heappush(heap, (priority, next(counter), obj))
+```
+
+## 19.14 `Counter` Zero Counts
+
+```python
+freq[x] -= 1
+```
+
+may leave `x` in the counter with count zero.
+
+Delete when distinct count matters:
+
+```python
+if freq[x] == 0:
+    del freq[x]
+```
+
+## 19.15 `defaultdict` Auto-Creation
+
+```python
+d = defaultdict(list)
+d[key]
+```
+
+creates `key`.
+
+## 19.16 Truthiness of Valid Values
+
+```python
+if not index:
+    ...
+```
+
+This treats `0` as missing.
+
+Use:
+
+```python
+if index is None:
+    ...
+```
+
+## 19.17 Float Equality
+
+Bad:
+
+```python
+a == b
+```
+
+for computed floats.
+
+Good:
+
+```python
+abs(a - b) < 1e-9
+```
+
+## 19.18 Integer Overflow Assumptions
+
+Python will not overflow automatically. If bounds matter, check manually.
+
+## 19.19 Dict Order Is Not Sorted
+
+Dict preserves insertion order, not key order.
+
+Use:
+
+```python
+for key in sorted(d):
+    ...
+```
+
+## 19.20 Set Order Is Not Stable Sorted Order
+
+Do not use set iteration for sorted output.
+
+## 19.21 Late-Binding Closures
+
+Bad:
+
+```python
+funcs = [lambda: i for i in range(3)]
+```
+
+Good:
+
+```python
+funcs = [lambda i=i: i for i in range(3)]
+```
+
+## 19.22 `nonlocal` Missing
+
+If you reassign an outer variable inside a nested function, use `nonlocal`.
+
+## 19.23 Generator Exhaustion
+
+```python
+it = map(int, ["1", "2"])
+list(it)  # [1, 2]
+list(it)  # []
+```
+
+## 19.24 `zip` Truncation
+
+`zip` stops at the shortest iterable.
+
+## 19.25 `range` Is Not a List
+
+Usually good. Materialize only if needed.
+
+## 19.26 `sum(list_of_lists, [])`
+
+Bad flattening pattern. Use `chain.from_iterable`.
+
+## 19.27 `bisect.insort` Is O(n)
+
+Do not mistake it for a tree insert.
+
+## 19.28 Cache Arguments Unhashable
+
+Lists, dicts, and sets cannot be cache keys.
+
+Convert to tuples when needed.
+
+## 19.29 Cache on Methods Includes `self`
+
+Prefer nested cached helpers in interview code.
+
+## 19.30 Class-Level Mutable State
+
+Bad:
+
+```python
+class C:
+    items = []
+```
+
+Good:
+
+```python
+class C:
+    def __init__(self):
+        self.items = []
+```
+
+## 19.31 Boolean `or` Defaults
+
+Bad when `0` is valid:
+
+```python
+limit = user_limit or 10
+```
+
+Good:
+
+```python
+limit = 10 if user_limit is None else user_limit
+```
+
+## 19.32 NaN
+
+```python
+float("nan") != float("nan")
+```
+
+## 19.33 Shadowing Built-ins
+
+Avoid:
+
+```python
+list = []
+dict = {}
+sum = 0
+```
+
+You lose access to the built-in name.
+
+## 19.34 Leaking State Across Test Cases
+
+On online judges, the same `Solution` instance behavior varies by platform.
+Avoid persistent mutable state unless intended.
+
+Prefer local variables inside the method.
+
+## 19.35 Over-Clever One-Liners
+
+Python allows dense code. Interviews reward readable code.
+
+Prefer:
+
+```python
+result = []
+for x in nums:
+    if valid(x):
+        result.append(transform(x))
+```
+
+Over a deeply nested comprehension that the interviewer cannot inspect quickly.
+
+---
+
+# 20. Staff-Level Python Communication
+
+## 20.1 When Choosing a Data Structure
+
+> **SAY THIS:** "I am using a dict here because I need average O(1) lookup, and
+> the O(n) extra space is the tradeoff."
+
+> **SAY THIS:** "I am using a deque rather than a list because removing from the
+> front of a list is O(n)."
+
+> **SAY THIS:** "I am using tuples as keys because lists are mutable and
+> unhashable."
+
+> **SAY THIS:** "I am avoiding slicing here because it would allocate a new list
+> each time."
+
+## 20.2 When Discussing Python vs Java
+
+> **SAY THIS:** "Python lets me express the core logic with fewer lines, but I
+> need to be careful about hidden copies, object overhead, recursion depth, and
+> list operations that shift elements."
+
+> **SAY THIS:** "Java has built-in tree-backed maps and sets; Python's standard
+> library does not, so ordered dynamic operations need a different plan unless
+> `sortedcontainers` is allowed."
+
+## 20.3 When Asked About Complexity
+
+Be specific:
+
+```text
+dict lookup is average O(1)
+list membership is O(n)
+heap push/pop is O(log n)
+deque popleft is O(1)
+slice of length k is O(k)
+sort is O(n log n)
+```
+
+Do not say:
+
+```text
+Python handles it
+```
+
+## 20.4 When Asked About Internals
+
+> **SAY THIS:** "A Python list is a dynamic array of references, so append is
+> amortized O(1), but inserting or deleting near the front shifts references and
+> is O(n)."
+
+> **SAY THIS:** "A dict is a hash table, so lookup is average O(1), assuming
+> good hashing and non-adversarial collisions."
+
+> **SAY THIS:** "Strings are immutable, so repeated concatenation can allocate
+> many intermediate strings. I would collect parts and join once."
+
+## 20.5 When You Need a Non-Standard Library
+
+> **SAY THIS:** "If `sortedcontainers` is allowed, this is straightforward with
+> a sorted list or sorted dict. If not, I would avoid assuming it and choose a
+> standard-library design."
+
+## 20.6 When Recursion Might Fail
+
+> **SAY THIS:** "The recursive version is clean, but Python has a recursion
+> limit. If depth can be large, I would use an explicit stack rather than just
+> raising the recursion limit."
+
+---
+
+# 21. Final Cheat Sheets
+
+## 21.1 Imports
 
 ```python
 from collections import defaultdict, Counter, deque, OrderedDict
-from heapq import heappush, heappop, heapify
-from bisect import bisect_left, bisect_right
-from functools import lru_cache
-from math import inf, gcd, isqrt
+from heapq import heappush, heappop, heappushpop, heapreplace, heapify, nlargest, nsmallest
+from bisect import bisect_left, bisect_right, insort
+from functools import cache, lru_cache, cmp_to_key
+from itertools import count, chain, product, pairwise, accumulate
+from operator import itemgetter, attrgetter
+from math import inf, gcd, lcm, isqrt
+from threading import Lock, RLock, Event, Semaphore, Condition
+from queue import Queue
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from contextlib import contextmanager, ExitStack
+from dataclasses import dataclass, field
 ```
 
-## Data structure choices
+## 21.2 Structure Choice
+
+| Need | Use |
+|---|---|
+| dynamic array | `list` |
+| stack | `list` |
+| queue | `deque` |
+| fast membership | `set` |
+| key-value lookup | `dict` |
+| frequency | `Counter` / `defaultdict(int)` |
+| grouping | `defaultdict(list)` |
+| priority queue | `heapq` |
+| sorted array search | `bisect_left`, `bisect_right` |
+| recency operations | `OrderedDict` |
+| immutable compound key | `tuple` |
+| ordered map/set | confirm `sortedcontainers` or redesign |
+| resource cleanup | `with` / context manager |
+| cross-cutting wrapper | decorator with `functools.wraps` |
+| lazy stream | generator / iterator |
+| I/O-bound concurrency | threads / `ThreadPoolExecutor` |
+| CPU-bound parallelism | processes / `ProcessPoolExecutor` |
+| async network concurrency | `asyncio` |
+| shared thread state | `Lock` / `Queue` |
+
+## 21.3 Complexity Must-Know
 
 ```text
-Need stack                 -> list
-Need queue                 -> deque
-Need frequency             -> Counter / defaultdict(int)
-Need grouping              -> defaultdict(list)
-Need visited               -> set
-Need priority queue        -> heapq
-Need ordered binary search -> bisect, but insertion is O(n)
-Need prefix matching       -> trie
-Need connectivity          -> DSU
-Need range sum updates     -> Fenwick / segment tree
-Need memoized recursion    -> lru_cache(None)
+list index/read/write           O(1)
+list append/pop end             amortized O(1) / O(1)
+list pop front/insert front      O(n)
+list membership                  O(n)
+list slice length k              O(k)
+dict/set lookup/insert/delete    average O(1)
+deque append/pop both ends       O(1)
+heap push/pop                    O(log n)
+heap peek                        O(1)
+heapify                          O(n)
+bisect search                    O(log n)
+bisect insort                    O(n)
+sort                             O(n log n)
+string slice length k            O(k)
+string join total length n       O(n)
 ```
 
-## Complexity traps
+## 21.4 Night-Before Pitfall Scan
 
 ```text
-pop(0) is O(n)
-insert into list is O(n)
-slicing copies
-string += in loop is bad
-sort is O(n log n)
-bisect insertion is O(n)
-recursion may hit limit
-heap ties may compare bad objects
+Did I use list.pop(0)?
+Did I use list.insert(0, x)?
+Did I slice in a loop or recursion?
+Did I build strings with += in a loop?
+Did I create [[0] * cols] * rows?
+Did I use a mutable default argument?
+Did I compare values with is?
+Did I assume // truncates toward zero?
+Did I mutate a dict/list while iterating?
+Did I leave zero-count Counter keys?
+Did defaultdict create keys by reading?
+Did heap tuples risk comparing objects?
+Did I use bisect.insort assuming O(log n)?
+Did I rely on recursion depth being large?
+Did I pass an unhashable list/dict/set into cache?
+Did I rely on dict order being sorted?
+Did I accidentally shadow list, dict, set, sum, or max?
+Did a context manager accidentally suppress exceptions?
+Did a decorator forget functools.wraps?
+Did I consume a generator twice?
+Did threads share mutable state without a lock or Queue?
+Did I hold a lock while doing blocking I/O?
+Did I use threads for CPU-bound speedup in normal CPython?
+Did process-pool work require unpicklable functions or arguments?
+Did async code call blocking functions on the event loop?
 ```
 
-## Most common patterns
+## 21.5 Final Rule
 
 ```text
-Hash map
-Two pointers
-Sliding window
-Prefix sum
-Binary search
-Stack
-Monotonic stack
-Deque BFS
-Heap
-Intervals
-Graph DFS/BFS
-Topological sort
-Dijkstra
-Union-Find
-Trie
-Backtracking
-Dynamic programming
-Fenwick/segment tree
+Use Python to make the algorithm clear.
+Do not use Python cleverness to hide the algorithm.
 ```
 
----
-
-# 40. What You Should Practice in Order
-
-For fastest FAANG+ readiness as a Java dev, do this order:
-
-```text
-1. Python syntax + built-ins
-2. Arrays/hash maps/two pointers/sliding window
-3. Binary search + prefix sums
-4. Stack/monotonic stack/heap
-5. Linked list/tree basics
-6. Graph BFS/DFS/toposort/DSU/Dijkstra
-7. Backtracking
-8. DP
-9. Design problems
-10. Advanced structures: Fenwick, segment tree, trie
-```
-
-Problem types to master:
-
-```text
-Two Sum
-Group Anagrams
-Longest Substring Without Repeating
-Minimum Window Substring
-Subarray Sum Equals K
-Merge Intervals
-Meeting Rooms II
-Binary Search on Answer
-Kth Largest
-Top K Frequent
-Merge K Lists
-LRU Cache
-RandomizedSet
-Reverse Linked List
-Cycle Linked List
-Tree Diameter
-LCA
-Validate BST
-Number of Islands
-Course Schedule
-Dijkstra shortest path
-Union-Find components
-Word Search
-Combination Sum
-House Robber
-Coin Change
-LIS
-Partition Equal Subset Sum
-Burst Balloons
-```
-
----
-
-# 41. Final Rulebook for Interview Python
-
-Write code like this:
-
-```text
-simple
-explicit
-correct
-asymptotically clean
-easy to explain
-```
-
-Avoid code like this:
-
-```text
-too clever
-too compressed
-dependent on obscure Python behavior
-full of hidden copies
-using wrong data structure
-```
-
-When stuck, ask:
-
-```text
-Can I sort?
-Can I hash?
-Can I use two pointers?
-Is this a sliding window?
-Is this prefix sum?
-Is this binary search on answer?
-Is this graph traversal?
-Is this DP state?
-Can I maintain a heap?
-Can I process events in sorted order?
-```
-
-That question list alone solves a huge percentage of coding rounds.
-
-The goal is not to “write Python.” The goal is to express the right algorithm with fewer bugs than your Java implementation would have under time pressure.
-
-[1]: https://docs.python.org/3/library/heapq.html?utm_source=chatgpt.com "heapq — Heap queue algorithm — Python 3.14.6 documentation"
-[2]: https://docs.python.org/3/library/collections.html?utm_source=chatgpt.com "collections — Container datatypes — Python 3.14.5 documentation"
-[3]: https://docs.python.org/3/library/bisect.html?utm_source=chatgpt.com "bisect — Array bisection algorithm — Python 3.14.6 documentation"
-[4]: https://docs.python.org/3/library/functools.html?utm_source=chatgpt.com "functools — Higher-order functions and operations on ... - Python"
