@@ -109,9 +109,13 @@ import math
 | max-heap (numeric) | `heappush(h, -x); top = -heappop(h)` | O(log n) |
 | heap tie-break | `heappush(h, (prio, next(counter), obj))` | O(log n) |
 | frequency map | `freq = Counter(nums)` | O(n) |
+| anagram check | `Counter(s1) == Counter(s2)` | O(n) |
+| argmax over dict | `max(d, key=d.get)` | O(n) |
 | grouping | `g = defaultdict(list); g[k].append(v)` | O(1) avg |
 | group, no auto-create | `d.setdefault(k, []).append(v)` | O(1) avg |
+| adjacency list | `adj = defaultdict(list); adj[u].append(v)` | O(1) avg |
 | 2D grid | `grid = [[0]*cols for _ in range(rows)]` | O(rows·cols) |
+| grid neighbors | `for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):` | O(1) |
 | index ↔ coordinate | `r, c = divmod(idx, cols)` | O(1) |
 | transpose / unzip | `cols = list(zip(*grid))` | O(rows·cols) |
 | running totals | `pre = list(accumulate(nums, initial=0))` | O(n) |
@@ -1034,6 +1038,19 @@ Default for empty iterables:
 best = max(nums, default=0)
 ```
 
+`max`/`min` with `key=` over a dict is the idiomatic **argmax/argmin** — the
+*key* whose value is largest, not the value itself:
+
+```python
+freq = {"a": 5, "b": 9, "c": 1}
+max(freq, key=freq.get)   # "b"  -> key with the largest value
+min(freq, key=freq.get)   # "c"  -> key with the smallest value
+```
+
+> **PITFALL:** Iterating a dict yields its **keys**, so `max(d)` returns the
+> largest *key*, and `max(d.values())` returns the largest *value* but loses
+> which key it belonged to. Use `max(d, key=d.get)` when you need the key.
+
 ## 6.7 `sum`
 
 Good for numbers:
@@ -1386,6 +1403,48 @@ if seen.get("b", 0) == 0:
 > **STAFF NOTE:** Staff signal is not using every Python feature. Staff signal
 > is knowing exactly when a convenience turns into a hidden cost.
 
+## 6.13 Grid, State, and Constant Idioms
+
+These appear in a large fraction of LeetCode problems and are pure scaffolding,
+not algorithm templates.
+
+Grid neighbors via direction vectors:
+
+```python
+DIRS = ((1, 0), (-1, 0), (0, 1), (0, -1))     # down, up, right, left
+for dr, dc in DIRS:
+    nr, nc = r + dr, c + dc
+    if 0 <= nr < rows and 0 <= nc < cols:     # bounds check before use
+        visit(nr, nc)
+
+# all 8 directions (includes diagonals), excluding staying put:
+DIRS8 = [(dr, dc) for dr in (-1, 0, 1) for dc in (-1, 0, 1) if (dr, dc) != (0, 0)]
+```
+
+Sparse / "infinite" grid with a dict, no bounds bookkeeping:
+
+```python
+grid = {}
+grid[(r, c)] = 1            # tuple coordinate as key
+grid.get((r, c), 0)         # default for unset cells; no IndexError to worry about
+```
+
+Tuple-swap and the singleton-tuple comma:
+
+```python
+a, b = b, a                 # swap with no temp variable
+single = (1,)               # one-element tuple — the COMMA makes it, not the parens
+not_a_tuple = (1)           # this is just the int 1
+```
+
+> **PITFALL:** `(1)` is an `int`; only `(1,)` is a one-element tuple. This bites
+> when returning a single value you intended to be a tuple, or building a heap
+> entry with one field.
+
+> **TRICK:** Storing grid cells as `(r, c)` tuples in a `dict`/`set` sidesteps
+> all out-of-bounds handling — absent cells simply are not keys. Trade: you lose
+> O(1) dense indexing, so use it when the grid is sparse or unbounded.
+
 ---
 
 # 7. Data Structures and Complexity
@@ -1672,6 +1731,21 @@ Counter(a=2) - Counter(a=2)  # Counter()
 
 This differs from direct assignment/subtraction.
 
+Two `Counter` tricks that collapse whole problems to one line:
+
+```python
+Counter("listen") == Counter("silent")   # True — anagram check in one comparison
+
+a, b = Counter("aabbc"), Counter("abccc")
+a & b      # Counter({'a':1,'b':1,'c':1})  intersection: min of each count
+a | b      # union: max of each count
+a - b      # difference: subtract, drop counts that fall to <= 0
+```
+
+> **TRICK:** `Counter(s1) == Counter(s2)` is the cleanest anagram test. The `&`
+> multiset intersection is the clean answer to "common elements with
+> multiplicity" (e.g. intersection of two arrays keeping duplicates).
+
 ## 7.8 `defaultdict`
 
 ```python
@@ -1721,6 +1795,19 @@ d.setdefault(key, []).append(value)
 > when the key already exists. For a hot loop with expensive defaults,
 > `defaultdict` avoids that wasted construction.
 
+Nest factories for adjacency lists, 2D counts, and grouped sets:
+
+```python
+adj  = defaultdict(list)              # graph adjacency: adj[u].append(v)
+grid = defaultdict(lambda: defaultdict(int))   # sparse 2D table: grid[r][c] += 1
+seen = defaultdict(set)               # group into sets: seen[key].add(item)
+```
+
+> **TRICK:** `defaultdict(list)` is the standard way to build an adjacency list
+> from an edge list — `for u, v in edges: adj[u].append(v)` — with no key-exists
+> checks. For a sparse 2D grid, `defaultdict(lambda: defaultdict(int))` avoids
+> allocating a full `R x C` matrix.
+
 ## 7.9 `OrderedDict`
 
 Modern dicts preserve insertion order, but `OrderedDict` has explicit recency
@@ -1764,6 +1851,11 @@ Max-heap for numeric priorities:
 heappush(heap, -x)
 x = -heappop(heap)
 ```
+
+> **PITFALL:** `heappush`/`heappop` have **no `key=` parameter** (unlike `sort`
+> or `min`). To order by something other than the natural value, push a tuple
+> with the sort key first: `heappush(heap, (len(word), word))`. Note that
+> `heapq.nlargest`/`nsmallest` *do* accept `key=` — only push/pop do not.
 
 > **PITFALL:** Tuple heap entries compare field by field. If priorities tie,
 > Python compares the next field.
@@ -2141,6 +2233,17 @@ q, r = divmod(17, 5)            # (3, 2)
 row, col = divmod(idx, cols)    # flat index -> (row, col)
 ```
 
+> **JAVA DEV TRAP:** Python `%` takes the sign of the **divisor**; Java/C++ `%`
+> takes the sign of the **dividend**. For Java-consistent modulo of negatives,
+> use `math.fmod` (it returns a float and truncates toward zero):
+
+```python
+import math
+
+-10 % 3              # 2     Python: sign follows divisor
+math.fmod(-10, 3)    # -1.0  C/Java: sign follows dividend (truncated)
+```
+
 ## 9.4 Ceiling Division
 
 For positive integers:
@@ -2168,6 +2271,21 @@ pow(a, b, mod)
 ```
 
 This is efficient and avoids huge intermediate values.
+
+`pow(a, -1, mod)` returns the **modular inverse** of `a` (Python 3.8+), which is
+what "divide under a modulus" requires — you cannot use `/` or `//` in modular
+arithmetic:
+
+```python
+MOD = 10**9 + 7
+inv = pow(a, -1, MOD)         # modular inverse: (a * inv) % MOD == 1
+result = (numerator * inv) % MOD   # the modular form of numerator / a
+```
+
+> **JAVA DEV TRAP:** "Count things modulo 1e9+7" problems are common. Because
+> Python ints never overflow, you can compute freely and take `% MOD` at the
+> end — but apply `% MOD` as you go anyway to keep numbers small and fast, and
+> never use `//` for division under a modulus; use `pow(x, -1, MOD)`.
 
 ## 9.6 `math`
 
@@ -2344,6 +2462,19 @@ s = "".join(parts)
 
 > **PITFALL:** Repeated string concatenation can create many intermediate
 > strings. Use list accumulation and join for large builds.
+
+To "mutate" a string (reverse in place, swap chars, two-pointer edits), convert
+to a list, edit, then join back — the standard workaround for immutability:
+
+```python
+chars = list(s)        # ['h','e','l','l','o']
+chars[0] = "H"         # edit freely (a list IS mutable)
+s = "".join(chars)     # "Hello"  -> one O(n) join, not O(n^2) concatenation
+```
+
+> **TRICK:** Any LeetCode problem that says "modify the string in place" or uses
+> two pointers on characters becomes `list(s)` → mutate → `"".join(...)`. The
+> single join at the end is O(n); per-character `+=` would be O(n^2).
 
 ## 10.2 Common String Methods
 
@@ -2568,6 +2699,33 @@ for row in matrix:
 
 > **TIP:** If a comprehension needs more than two clauses or complex
 > conditions, a normal loop is often clearer in interviews.
+
+## 11.7 `for...else` and `while...else`
+
+A loop can have an `else` clause. It runs **only if the loop finished without
+hitting `break`** — i.e. "we scanned everything and never found it." This is the
+clean way to express search-failure logic without a separate found flag.
+
+```python
+for x in items:
+    if x == target:
+        handle(x)
+        break
+else:
+    # runs ONLY if the loop never broke
+    not_found()
+```
+
+`while...else` works the same: the `else` runs when the condition becomes false
+naturally, but is skipped if a `break` fires.
+
+> **JAVA DEV TRAP:** This `else` does NOT mean "the else of an if." It means "no
+> break happened." Read `for...else` as `for...nobreak`. It is the one Python
+> construct whose keyword genuinely misleads — many engineers avoid it for that
+> reason, but recognizing it is worth it.
+
+> **TRICK:** It replaces the `found = False / ... / if not found:` boilerplate
+> you would write in Java. Only reach for it when a plain flag is not clearer.
 
 ---
 
@@ -3153,6 +3311,72 @@ Child.mro()
 > **STAFF NOTE:** Multiple inheritance can be powerful, but production Python
 > usually favors simple inheritance trees, mixins with narrow behavior, and
 > composition.
+
+## 14.16 Dunder Method Map: Which Method Powers Which Syntax
+
+Every operator and built-in in Python dispatches to a dunder ("double
+underscore") method on the object's class. This matters in **design questions**
+— "implement an iterator," "make this indexable," "design an LRU cache / HashMap"
+— where the interviewer wants you to implement the protocol, not wrap a `list`.
+
+```text
+SYNTAX / BUILT-IN          DUNDER METHOD          NOTES
+obj = T(...)               __init__               initializer (not the constructor; __new__ is)
+print(obj) / str(obj)      __str__                human-readable; falls back to __repr__
+repr(obj) / REPL echo      __repr__               unambiguous, for developers/debugging
+len(obj)                   __len__                must return a non-negative int
+obj[key]                   __getitem__            indexing AND slicing (key may be a slice)
+obj[key] = val             __setitem__            index/slice assignment
+del obj[key]               __delitem__            index/slice deletion
+x in obj                   __contains__           membership; falls back to __iter__ scan
+for x in obj               __iter__ (+ __next__)  iteration protocol; __next__ raises StopIteration
+obj()                      __call__               makes an instance callable like a function
+a == b   a < b             __eq__   __lt__         comparisons (see total_ordering, §8.7)
+a + b    a - b    a * b    __add__  __sub__  __mul__   arithmetic operators
+a / b    a // b   a % b    __truediv__ __floordiv__ __mod__
+with obj as x:             __enter__ / __exit__   context manager (§17.2)
+hash(obj)                  __hash__               required for set/dict keys (see §14.5)
+```
+
+Minimal container that supports `len`, indexing, membership, and iteration:
+
+```python
+class Grid:
+    def __init__(self, data):
+        self._data = list(data)
+
+    def __len__(self):              return len(self._data)
+    def __getitem__(self, i):       return self._data[i]      # also enables slicing
+    def __setitem__(self, i, v):    self._data[i] = v
+    def __contains__(self, v):      return v in self._data
+    def __iter__(self):             return iter(self._data)   # delegate to list's iterator
+    def __repr__(self):             return f"Grid({self._data})"
+
+g = Grid([1, 2, 3])
+len(g); g[0]; g[0] = 9; 2 in g; [x * 2 for x in g]   # all work
+```
+
+An instance can be callable, which is handy for stateful "function objects":
+
+```python
+class Counter:
+    def __init__(self):    self.n = 0
+    def __call__(self):                 # invoked by  c()
+        self.n += 1
+        return self.n
+
+c = Counter()
+c(); c()        # 1, then 2
+```
+
+> **STAFF NOTE:** When asked to "implement an iterator," return an object whose
+> `__iter__` returns something with `__next__` (or just `yield` — a generator is
+> an iterator for free). Delegating `__iter__` to `iter(self._data)` is the
+> cleanest answer when you wrap an existing collection.
+
+> **PITFALL:** `__getitem__` receives a `slice` object for `obj[a:b]`, not an
+> int. If you implement it by hand, handle both `int` and `slice`, or your class
+> silently breaks on slicing.
 
 ---
 
@@ -5618,6 +5842,31 @@ while stack:
         stack.append(child)
 ```
 
+## 21.7 Stating Invariants With `assert`
+
+You will rarely write `pytest` in a coding round, but `assert` is a fast way to
+make an invariant explicit — both for yourself while debugging and as a signal
+to the interviewer that you know the loop's guarantees.
+
+```python
+def merge_step(heap):
+    assert heap, "merge_step requires a non-empty heap"   # precondition
+    ...
+    assert is_sorted(result), "merge must preserve order"  # postcondition
+```
+
+`assert cond, "message"` raises `AssertionError` with the message when `cond` is
+falsy, and is a no-op when it holds.
+
+> **SAY THIS:** "I'll assert the invariant here — at this point the heap should
+> be drained — so if I'm wrong the failure is loud and local instead of a silent
+> wrong answer later."
+
+> **PITFALL:** Never use `assert` for real input validation or control flow.
+> Running Python with the `-O` flag strips every `assert`, so production code
+> must `raise` explicitly. In interviews, `assert` for invariants is fine; for
+> user-facing errors, `raise ValueError(...)`.
+
 ---
 
 # 22. Final Cheat Sheets
@@ -5722,6 +5971,13 @@ i = bisect_left(a, x)                    # ceiling index (smallest a[i] >= x)
 w = deque(maxlen=k)                      # auto-evicting sliding window
 sorted(xs, key=lambda v: (v is None, v)) # sort with None pushed to the end
 merged = {**d1, **d2}                    # merge dicts (right side wins)
+for x in xs: ...                         # loop body
+else: not_found()                        # for...else: runs if no break fired
+math.fmod(-10, 3)                        # -1.0  Java-style modulo of negatives
+max(d, key=d.get)                        # argmax: key with the largest value
+Counter(s1) == Counter(s2)               # anagram check in one comparison
+chars = list(s); ...; "".join(chars)     # mutate an immutable string
+pow(a, -1, MOD)                          # modular inverse (divide under a mod)
 ```
 
 ## 22.5 Night-Before Pitfall Scan
@@ -5765,6 +6021,10 @@ Did += on a list mutate a value the caller still aliases?
 Did a bare except: swallow KeyboardInterrupt or SystemExit?
 Did a dataclass field use a bare mutable default instead of default_factory?
 Did I forget that out-of-range slices return [] instead of raising?
+Did I try to pass key= to heappush/heappop (it has none — push a tuple)?
+Did I use max(d) when I meant max(d, key=d.get) (largest key vs largest value)?
+Did I divide with // under a modulus instead of pow(x, -1, MOD)?
+Did I write (1) expecting a one-element tuple instead of (1,)?
 ```
 
 ## 22.6 Final Rule
