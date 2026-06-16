@@ -41,10 +41,13 @@ Callouts are used consistently:
 
 > **SAY THIS:** Interview-ready wording you can use out loud.
 
+> **TIP:** A practical pointer that makes your code cleaner or faster to write.
+
 ---
 
 ## Table of Contents
 
+0. [Quick Reference: Setup and Must-Type Idioms](#0-quick-reference-setup-and-must-type-idioms)
 1. [The Goal](#1-the-goal)
 2. [Python Version and Platform Reality](#2-python-version-and-platform-reality)
 3. [Java to Python Translation](#3-java-to-python-translation)
@@ -68,6 +71,84 @@ Callouts are used consistently:
 21. [Staff-Level Python Communication](#21-staff-level-python-communication)
 22. [Final Cheat Sheets](#22-final-cheat-sheets)
 23. [Official References](#23-official-references)
+
+---
+
+# 0. Quick Reference: Setup and Must-Type Idioms
+
+This page is for the night before and the first two minutes of a round. Everything
+here is explained in depth in later sections; this is the muscle-memory layer.
+
+## 0.1 Standard Interview Preamble
+
+This is language setup, not an algorithm template. Paste only what you use.
+
+```python
+import sys
+from collections import defaultdict, Counter, deque, OrderedDict
+from functools import cache, lru_cache, reduce
+from itertools import accumulate, product, pairwise, permutations, combinations
+import heapq
+import bisect
+import math
+
+# input = sys.stdin.readline          # faster line input on CLI judges
+# sys.setrecursionlimit(10**6)        # only if you knowingly recurse deep
+```
+
+> **STAFF NOTE:** Do not paste all of this blindly. Importing names you never use
+> reads as noise. Add each import the moment you reach for it.
+
+## 0.2 The Idioms You Will Actually Type
+
+| Goal | Idiom | Cost |
+|---|---|---|
+| index + value | `for i, x in enumerate(nums):` | O(n) |
+| pair adjacent | `for a, b in pairwise(nums):` | O(n) |
+| queue | `q = deque(); q.append(x); q.popleft()` | O(1) ends |
+| max-heap (numeric) | `heappush(h, -x); top = -heappop(h)` | O(log n) |
+| heap tie-break | `heappush(h, (prio, next(counter), obj))` | O(log n) |
+| frequency map | `freq = Counter(nums)` | O(n) |
+| grouping | `g = defaultdict(list); g[k].append(v)` | O(1) avg |
+| group, no auto-create | `d.setdefault(k, []).append(v)` | O(1) avg |
+| 2D grid | `grid = [[0]*cols for _ in range(rows)]` | O(rows·cols) |
+| index ↔ coordinate | `r, c = divmod(idx, cols)` | O(1) |
+| transpose / unzip | `cols = list(zip(*grid))` | O(rows·cols) |
+| running totals | `pre = list(accumulate(nums, initial=0))` | O(n) |
+| sorted insert point | `i = bisect_left(arr, x)` | O(log n) |
+| reverse | `for x in reversed(nums):` | O(n) |
+| build a string | `"".join(parts)` | O(total) |
+| count predicate | `sum(1 for x in nums if ok(x))` | O(n) |
+| keep-while-assigning | `while (line := f.readline()):` | — |
+| memoize | `@cache` over a pure, hashable-arg function | — |
+| char ↔ small index | `ord(ch) - ord("a")` | O(1) |
+| lowest set bit | `x & -x` | O(1) |
+| clear lowest set bit | `x & (x - 1)` | O(1) |
+| sentinel min/max | `best = inf` / `best = -inf` | — |
+
+## 0.3 Reflexes That Prevent Wrong Answers
+
+```text
+queue          -> deque.popleft(), never list.pop(0)
+2D grid        -> [[0]*c for _ in range(r)], never [[0]*c]*r
+default arg    -> def f(x=None): if x is None: x = []
+missingness    -> if x is None, never if not x (0/""/[] are falsy)
+identity       -> is only for None / same-object; == for values
+int division   -> // floors toward -inf; it does not truncate
+float compare  -> math.isclose(a, b), never a == b
+heap of tuples -> add a counter tie-breaker before any unorderable payload
+cache args     -> must be hashable; pass tuple(...), never a list
+dict/set iter  -> iterate over list(d) if you mutate inside the loop
+```
+
+## 0.4 Complexity Sanity Targets
+
+```text
+n <= 20          exponential / bitmask may pass
+n <= 5,000       O(n^2) may pass
+n <= 100,000     want O(n log n) or O(n)
+n >= 1,000,000   want O(n); avoid hidden O(n) ops (front pop, slice, in-list)
+```
 
 ---
 
@@ -185,6 +266,24 @@ Python 3.14 added `heapq.heapify_max`, `heappush_max`,
 platforms may not run 3.14 yet, so the safe max-heap idiom remains pushing
 negative numeric priorities.
 
+Example of writing version-safe interview code:
+
+```python
+from functools import lru_cache
+import heapq
+
+@lru_cache(None)          # Works even when functools.cache is unavailable.
+def fib(n):
+    if n < 2:
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+max_heap = []
+heapq.heappush(max_heap, -10)
+heapq.heappush(max_heap, -3)
+largest = -heapq.heappop(max_heap)  # 10
+```
+
 ## 2.3 Third-Party Libraries
 
 Python's standard library does not include a `TreeMap`, `TreeSet`, or
@@ -235,6 +334,31 @@ But availability is not universal.
 | `a / b` integer division | `a // b` | But floors, does not truncate |
 | `&&`, `||`, `!` | `and`, `or`, `not` | Boolean operators are words |
 | `for (T x : xs)` | `for x in xs:` | Use `enumerate` for index |
+
+Examples of direct Java-to-Python translations:
+
+```python
+# Java: Map<String, Integer> count = new HashMap<>();
+count = {}
+count["a"] = count.get("a", 0) + 1
+
+# Java: StringBuilder sb = new StringBuilder();
+parts = []
+for word in words:
+    parts.append(word)
+text = "".join(parts)
+
+# Java: PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+import heapq
+
+pq = []
+heapq.heappush(pq, (distance, node))
+distance, node = heapq.heappop(pq)
+
+# Java: for (int i = 0; i < nums.length; i++)
+for i, value in enumerate(nums):
+    ...
+```
 
 ## 3.2 Java Habits to Drop
 
@@ -487,6 +611,67 @@ for key, value in d.items():
 > **TIP:** Unpacking makes tuple-heavy Python code readable. Use descriptive
 > names rather than indexing into tuples repeatedly.
 
+## 4.9 The Walrus Operator
+
+The assignment expression `:=` (Python 3.8+) binds a value and returns it in the
+same expression. It removes a duplicated call or an extra line.
+
+Read-and-test loop:
+
+```python
+while (line := f.readline()):
+    process(line)
+```
+
+Compute once, then branch:
+
+```python
+if (n := len(nums)) > k:
+    print(f"too many: {n}")
+```
+
+Reuse a value inside a comprehension:
+
+```python
+results = [y for x in data if (y := transform(x)) is not None]
+```
+
+> **TRICK:** Use the walrus to avoid calling an expensive function twice, or to
+> capture a loop value you also need to test. Do not overuse it; an extra plain
+> line is often clearer.
+
+> **PITFALL:** The parentheses in `while (line := ...)` and `if (n := ...)`
+> matter for readability and sometimes precedence. When unsure, parenthesize.
+
+## 4.10 Conditional Expressions and Merge Operators
+
+Python's ternary puts the value first, then the condition:
+
+```python
+x = a if cond else b
+```
+
+> **JAVA DEV TRAP:** This is not `cond ? a : b`. The order is value, condition,
+> value. Read it as "a, if cond, otherwise b."
+
+Unpack iterables and mappings directly into new literals:
+
+```python
+merged_list = [*a, *b]        # concatenate without chained +
+merged_set  = {*a, *b}        # union into a new set
+merged_dict = {**d1, **d2}    # later keys win on conflict
+```
+
+Dicts also support union operators (Python 3.9+):
+
+```python
+d3 = d1 | d2     # new dict, right side wins on key conflict
+d1 |= d2         # in-place update of d1
+```
+
+> **TRICK:** `{**defaults, **overrides}` is the clean way to layer config: start
+> from defaults, then let the overrides win.
+
 ---
 
 # 5. Functions, Scope, and Closures
@@ -657,6 +842,62 @@ else:
 In interviews, LBYL is often clearer unless exception handling is central to
 the task.
 
+## 5.9 The Full `try` Shape: `else`, `finally`, Multi-Catch, and `raise`
+
+The complete structure has four clauses. Each runs at a precise time:
+
+```python
+try:
+    risky()
+except (KeyError, IndexError) as e:   # catch several types; bind the instance
+    handle(e)
+except Exception as e:                # broader fallback
+    raise RuntimeError("wrapped") from e   # chain, preserving the cause
+else:
+    on_success()                      # runs only if try raised nothing
+finally:
+    cleanup()                         # runs always: success, exception, return
+```
+
+Clause semantics:
+
+```text
+except (A, B)   one handler for multiple types; first matching except wins
+else            runs only when no exception occurred (keep try bodies small)
+finally         runs no matter what, including on return/break/exception
+as e            binds the exception object for inspection or re-raise
+```
+
+Raising your own:
+
+```python
+class ValidationError(Exception):     # subclass Exception, not BaseException
+    pass
+
+raise ValidationError("bad input")
+```
+
+`raise ... from e` chains exceptions so the original cause is preserved:
+
+```python
+try:
+    parse(raw)
+except ValueError as e:
+    raise ValidationError("could not parse record") from e
+# the traceback shows both: the new error and "the above was the direct cause"
+```
+
+> **JAVA DEV TRAP:** Never write a bare `except:`. It also swallows
+> `KeyboardInterrupt` and `SystemExit`, so Ctrl-C and clean shutdown stop
+> working. Catch `Exception` (or a specific type), never bare `except:`.
+
+> **PITFALL:** A `return` inside `finally` overrides any return or exception from
+> the `try` body, silently discarding it. Do not return from `finally`.
+
+> **STAFF NOTE:** Catch the narrowest exception that expresses intent. Broad
+> `except Exception` at a boundary is fine when you log and re-raise; broad
+> catches that silently swallow errors are a classic production bug.
+
 ---
 
 # 6. Core Built-ins and Idioms
@@ -721,7 +962,21 @@ for a, b in zip(left, right):
 list(zip([1, 2], [3]))  # [(1, 3)]
 ```
 
-If mismatched lengths matter, check them.
+If mismatched lengths matter, check them, or pad with `zip_longest`:
+
+```python
+from itertools import zip_longest
+
+list(zip_longest([1, 2], [3], fillvalue=0))  # [(1, 3), (2, 0)]
+```
+
+> **TRICK:** `zip(*rows)` transposes a matrix (it unzips). It is the cleanest way
+> to swap rows and columns or to peel parallel columns apart.
+
+```python
+grid = [[1, 2, 3], [4, 5, 6]]
+cols = list(zip(*grid))  # [(1, 4), (2, 5), (3, 6)]
+```
 
 ## 6.5 `any` and `all`
 
@@ -736,6 +991,15 @@ if all(x >= 0 for x in nums):
 ```
 
 They short-circuit.
+
+> **PITFALL:** Empty-iterable behavior is a classic edge case. `all([])` is
+> `True` (vacuous truth) and `any([])` is `False`. A validation like
+> `if all(valid(x) for x in items)` silently passes when `items` is empty.
+
+```python
+all([])  # True
+any([])  # False
+```
 
 > **TRICK:** Prefer generator expressions inside `any` and `all`; do not build
 > a list unless you need it.
@@ -858,6 +1122,33 @@ Flatten:
 ```python
 flat = list(chain.from_iterable(matrix))
 ```
+
+Group consecutive equal keys (run-length style):
+
+```python
+from itertools import groupby
+
+for key, group in groupby("aaabbc"):
+    count = len(list(group))   # ("a", 3), ("b", 2), ("c", 1)
+```
+
+> **PITFALL:** `groupby` only groups *consecutive* equal keys. To group all
+> equal keys regardless of position, sort first or use a `defaultdict(list)`.
+> Also, each `group` is a lazy sub-iterator: consume it (e.g. `list(group)`)
+> before advancing, or it is lost.
+
+Take the first `k` items from any iterable without materializing the rest:
+
+```python
+from itertools import islice
+
+first_k = list(islice(gen, k))        # NOT list(gen)[:k], which consumes everything
+window  = list(islice(gen, 2, 5))     # start, stop slicing on an iterator
+```
+
+> **TIP:** `islice` is the lazy equivalent of slicing. Use it on generators and
+> infinite iterators (`count()`, `cycle()`) where `[:k]` is impossible or
+> wasteful.
 
 > **TIP:** Use `itertools` when it makes intent clearer. Avoid using it to hide
 > simple logic from the interviewer.
@@ -1033,7 +1324,8 @@ Use for exact integer square roots. It avoids float precision issues.
 ones = mask.bit_count()
 ```
 
-Counts set bits in an integer.
+Counts set bits in an integer (Python 3.10+). On older runtimes use
+`bin(mask).count("1")`.
 
 ### Bit Length
 
@@ -1071,6 +1363,26 @@ count[idx] += 1
 | `deepcopy` | in a hot path |
 | clever comprehensions | interviewer cannot inspect the logic quickly |
 
+Examples of avoiding convenience when it changes the cost or semantics:
+
+```python
+# Avoid repeated slicing in recursive search; pass indexes instead.
+def search(nums, lo, hi, target):
+    if lo > hi:
+        return -1
+    mid = (lo + hi) // 2
+    if nums[mid] == target:
+        return mid
+    if nums[mid] < target:
+        return search(nums, mid + 1, hi, target)
+    return search(nums, lo, mid - 1, target)
+
+# Avoid defaultdict when a read should not mutate the map.
+seen = {"a": 1}
+if seen.get("b", 0) == 0:
+    ...
+```
+
 > **STAFF NOTE:** Staff signal is not using every Python feature. Staff signal
 > is knowing exactly when a convenience turns into a hidden cost.
 
@@ -1093,6 +1405,41 @@ count[idx] += 1
 | `heapq` | priority queue | push/pop O(log n), peek O(1), heapify O(n) |
 | `bisect` | binary search sorted list | search O(log n), insertion O(n) |
 | `OrderedDict` | recency order | O(1) move-to-end/pop front |
+
+Examples by structure:
+
+```python
+arr = [10, 20, 30]              # list: indexable dynamic array
+stack = []
+stack.append(1)
+stack.pop()                    # stack: pop from end
+
+point = (2, 3)                 # tuple: immutable compound key
+dist = {point: 5}
+
+letters = set("banana")        # set: membership/dedup
+exists = "b" in letters
+
+from collections import Counter, defaultdict, deque, OrderedDict
+freq = Counter("banana")       # Counter: frequencies
+groups = defaultdict(list)
+groups["a"].append("alice")    # defaultdict: grouping
+
+q = deque([1, 2, 3])
+q.popleft()                    # deque: queue
+
+import heapq
+heap = [5, 1, 3]
+heapq.heapify(heap)
+smallest = heapq.heappop(heap)
+
+import bisect
+idx = bisect.bisect_left([10, 20, 30], 20)
+
+lru = OrderedDict()
+lru["a"] = 1
+lru.move_to_end("a")
+```
 
 ## 7.2 `list`
 
@@ -1242,6 +1589,19 @@ seen.discard(x)  # no error if absent
 > **PITFALL:** Set iteration order is not a sorted order. Do not rely on it for
 > deterministic sorted output.
 
+A regular `set` is mutable and therefore unhashable, so it cannot be a dict key
+or an element of another set. `frozenset` is the immutable, hashable version:
+
+```python
+seen = set()
+seen.add(frozenset(state))      # legal: a "set of sets" needs frozenset members
+key = frozenset(group)          # canonical key for anagram-style grouping
+```
+
+> **TRICK:** When a visited-state, an unordered group, or an edge `{u, v}` must
+> be a dict key or live inside a set, reach for `frozenset`. It is the set
+> analog of using a `tuple` instead of a `list` as a key.
+
 ## 7.6 `deque`
 
 ```python
@@ -1260,6 +1620,19 @@ Use `deque` for queues and both-end workloads.
 
 > **PITFALL:** `deque` is not a replacement for random-access arrays. Indexing
 > into the middle is not what it is optimized for.
+
+A bounded deque is a ready-made sliding window. With `maxlen` set, appending to
+a full deque automatically evicts from the opposite end:
+
+```python
+window = deque(maxlen=3)
+for x in [1, 2, 3, 4]:
+    window.append(x)          # appending the 4th drops the 1st
+# window == deque([2, 3, 4], maxlen=3)
+```
+
+> **TRICK:** `deque(maxlen=k)` removes all manual eviction bookkeeping for
+> last-k / fixed-window problems. Both `append` and the auto-eviction stay O(1).
 
 ## 7.7 `Counter`
 
@@ -1335,6 +1708,19 @@ print(d)  # now has "missing"
 
 Use `key in d` or `d.get(key)` if you do not want mutation.
 
+> **TRICK:** `dict.setdefault` gives the same grouping convenience on a plain
+> dict, and it only inserts when you intend to. It returns the existing value if
+> present, otherwise inserts and returns the default.
+
+```python
+d = {}
+d.setdefault(key, []).append(value)
+```
+
+> **PITFALL:** The default in `setdefault(key, [])` is built on every call, even
+> when the key already exists. For a hot loop with expensive defaults,
+> `defaultdict` avoids that wasted construction.
+
 ## 7.9 `OrderedDict`
 
 Modern dicts preserve insertion order, but `OrderedDict` has explicit recency
@@ -1400,6 +1786,17 @@ heappush(heap, (priority, next(counter), obj))
 > **TIP:** `heapq.nlargest(k, items)` and `heapq.nsmallest(k, items)` are clean
 > for small `k`. For large `k`, sorting may be simpler and faster.
 
+Lazy k-way merge of already-sorted inputs:
+
+```python
+from heapq import merge
+
+merged = list(merge([1, 4, 7], [2, 3, 8], [0, 5]))  # fully sorted, streaming
+```
+
+`merge` returns an iterator and does not pull everything into memory, which suits
+merging many sorted streams.
+
 > **PITFALL:** `heapq` has no built-in efficient delete or decrease-key. Use
 > lazy deletion with an auxiliary dict/set when needed.
 
@@ -1423,12 +1820,43 @@ count_x = bisect_right(arr, x) - bisect_left(arr, x)
 > **PITFALL:** `insort` is O(n), not O(log n), because list insertion shifts
 > elements. The binary search part is O(log n), but insertion dominates.
 
-> **PITFALL:** The `key=` parameter added in Python 3.10 is applied to array
-> elements for searching, but not to the raw `x` value in the same way you may
-> expect. For complex cases, precompute keys or be explicit.
+> **PITFALL:** With the `key=` parameter (Python 3.10+), `key` is applied to the
+> list elements but **not** to `x`. You must pass `x` as the already-keyed value.
+> For example, to search `records` sorted by `.age`, call
+> `bisect_left(records, target_age, key=lambda r: r.age)` — note `target_age`,
+> not a record. When in doubt, precompute a separate keys list and bisect that.
 
 > **PITFALL:** The `bisect` functions are not designed for concurrent mutation
 > of the same list by multiple threads.
+
+### TreeMap floor / ceiling / lower / higher
+
+This is the idiom that replaces Java's `TreeMap.floorKey` / `ceilingKey` family
+on a **sorted, static** list. Memorize the four index formulas:
+
+```text
+floor   (largest value <= x):  i = bisect_right(arr, x) - 1   valid if i >= 0
+lower   (largest value <  x):  i = bisect_left(arr, x)  - 1   valid if i >= 0
+ceiling (smallest value >= x): i = bisect_left(arr, x)        valid if i < len(arr)
+higher  (smallest value >  x): i = bisect_right(arr, x)       valid if i < len(arr)
+```
+
+```python
+from bisect import bisect_left, bisect_right
+
+def floor(arr, x):                       # largest value <= x, else None
+    i = bisect_right(arr, x) - 1
+    return arr[i] if i >= 0 else None
+
+def ceiling(arr, x):                     # smallest value >= x, else None
+    i = bisect_left(arr, x)
+    return arr[i] if i < len(arr) else None
+```
+
+> **SAY THIS:** "In Java I'd use `TreeMap.floorKey`/`ceilingKey`. In Python, if
+> the data is sorted and static, `bisect` gives me the same floor/ceiling
+> queries in O(log n). If I also need O(log n) *insertions*, I need
+> `sortedcontainers` or a different design, because list insertion is O(n)."
 
 ## 7.12 `sortedcontainers`
 
@@ -1583,8 +2011,51 @@ class PrioritizedItem:
     item: Any = field(compare=False)
 ```
 
+If you write comparisons by hand, `functools.total_ordering` fills in the rest
+from `__eq__` plus one of `__lt__`, `__le__`, `__gt__`, or `__ge__`:
+
+```python
+from functools import total_ordering
+
+@total_ordering
+class Version:
+    def __init__(self, major, minor):
+        self.major, self.minor = major, minor
+
+    def __eq__(self, other):
+        return (self.major, self.minor) == (other.major, other.minor)
+
+    def __lt__(self, other):
+        return (self.major, self.minor) < (other.major, other.minor)
+    # __le__, __gt__, __ge__ are now derived automatically
+```
+
 > **STAFF NOTE:** In interviews, tuple entries are often simpler than custom
 > ordering classes. Use a class only if it improves clarity.
+
+## 8.8 Mixed-Type Comparison Raises
+
+Python 3 has no universal ordering across unrelated types. Comparing or sorting
+mixed types raises `TypeError`:
+
+```python
+sorted([1, None])    # TypeError: '<' not supported between 'NoneType' and 'int'
+sorted([1, "a"])     # TypeError: '<' not supported between 'str' and 'int'
+sorted([1, 2.0, 3])  # OK: int and float are mutually comparable
+```
+
+> **JAVA DEV TRAP:** Java often tolerates or defines cross-type ordering; Python
+> does not. A single stray `None` from a `dict.get` or a missing field turns a
+> `sorted(...)` call into a crash.
+
+Normalize with a key that pushes the odd values to one end:
+
+```python
+sorted(xs, key=lambda x: (x is None, x))   # all None values sort last, rest by value
+```
+
+> **PITFALL:** `>` / `<` between `str` and `int` also raises. If a column may be
+> "mostly numbers but sometimes a string," decide the type before comparing.
 
 ---
 
@@ -1612,6 +2083,16 @@ Common bounds:
 ```python
 INT_MIN = -2**31
 INT_MAX = 2**31 - 1
+```
+
+> **PITFALL:** `bool` is a subclass of `int`. `True == 1` and `False == 0`, and
+> `isinstance(True, int)` is `True`. This is occasionally useful and occasionally
+> a bug.
+
+```python
+sum(x > 0 for x in nums)        # counts positives: each True counts as 1
+{1: "a", True: "b"}             # {1: "b"} — True and 1 are the same dict key
+[10, 20][True]                  # 20 — indexing with a bool
 ```
 
 ## 9.2 Division
@@ -1650,6 +2131,14 @@ This is often convenient for normalization:
 
 ```python
 i = (i + delta) % n
+```
+
+`divmod(a, b)` returns `(a // b, a % b)` in one call. It is the cleanest idiom
+for digit extraction and for converting a flat index to grid coordinates.
+
+```python
+q, r = divmod(17, 5)            # (3, 2)
+row, col = divmod(idx, cols)    # flat index -> (row, col)
 ```
 
 ## 9.4 Ceiling Division
@@ -1695,6 +2184,30 @@ r = isqrt(n)
 > **PITFALL:** Prefer `math.isqrt` over `int(math.sqrt(n))` for integer
 > arithmetic. It avoids floating-point precision issues.
 
+Combinatorics without hand-rolled formulas (Python 3.8+):
+
+```python
+from math import comb, perm
+
+comb(5, 2)   # 10  -> n choose k
+perm(5, 2)   # 20  -> ordered arrangements
+```
+
+Reduce a binary function across many values:
+
+```python
+from functools import reduce
+from math import gcd
+
+g = reduce(gcd, [12, 18, 24])     # 6
+total_xor = reduce(lambda a, b: a ^ b, nums, 0)
+```
+
+> **PITFALL:** `round` uses banker's rounding (round half to even), not the
+> round-half-up you may expect. `round(0.5) == 0`, `round(1.5) == 2`, and
+> `round(2.5) == 2`. For half-up behavior, use `math.floor(x + 0.5)` or
+> `decimal.Decimal` with an explicit rounding mode.
+
 ## 9.7 Floating Point
 
 ```python
@@ -1707,6 +2220,15 @@ Compare with tolerance:
 abs(a - b) < 1e-9
 ```
 
+The idiomatic 3.5+ form is `math.isclose`, which also handles relative tolerance:
+
+```python
+from math import isclose
+
+isclose(0.1 + 0.2, 0.3)                    # True (relative tolerance)
+isclose(a, b, abs_tol=1e-9)                # absolute tolerance near zero
+```
+
 Infinity:
 
 ```python
@@ -1714,6 +2236,16 @@ from math import inf
 
 best = inf
 worst = -inf
+```
+
+> **STAFF NOTE:** `float("inf")` as a sentinel in an otherwise integer problem
+> silently promotes results to `float`. For pure-integer DP or distances where
+> type matters, use `sys.maxsize` as the "large" sentinel to stay in `int`.
+
+```python
+import sys
+
+dist = [sys.maxsize] * n   # stays int; arithmetic does not become float
 ```
 
 ## 9.8 NaN
@@ -1741,6 +2273,50 @@ from fractions import Fraction
 ```
 
 Rare in coding interviews, but useful to know.
+
+## 9.10 Bit Manipulation
+
+Python integers are arbitrary precision, so bit operations never overflow. The
+core operators are `& | ^ ~ << >>`.
+
+Essential single-bit tricks:
+
+```python
+x & -x            # lowest set bit, isolated (e.g. 0b1100 -> 0b0100)
+x & (x - 1)       # x with its lowest set bit cleared
+x | (1 << k)      # set bit k
+x & ~(1 << k)     # clear bit k
+x ^ (1 << k)      # toggle bit k
+(x >> k) & 1      # read bit k
+x.bit_count()     # number of set bits (Python 3.10+)
+x.bit_length()    # bits needed to represent x
+```
+
+Iterate over all submasks of a bitmask (a bitmask-DP staple):
+
+```python
+sub = mask
+while sub:
+    use(sub)
+    sub = (sub - 1) & mask    # walks every nonzero subset of mask, then 0 exits
+```
+
+Number-base conversions:
+
+```python
+int("ff", 16)     # 255  -> parse hex string
+int("1010", 2)    # 10   -> parse binary string
+bin(10)           # "0b1010"
+hex(255)          # "0xff"
+oct(8)            # "0o10"
+format(10, "b")   # "1010"  -> binary without the 0b prefix
+```
+
+> **PITFALL:** `~x` is `-(x + 1)` in Python (two's-complement on an infinite-width
+> integer). For a fixed-width mask, AND with the width mask: `~x & 0xFFFFFFFF`.
+
+> **TRICK:** A useful index pairing: `~i` indexes from the end, so `arr[~i]` is
+> `arr[-(i + 1)]`. This is handy for symmetric two-pointer-style indexing.
 
 ---
 
@@ -1790,6 +2366,25 @@ s.isalnum()
 
 `find` returns `-1` when absent.
 
+Parse-oriented methods worth knowing:
+
+```python
+"key=val=x".partition("=")    # ('key', '=', 'val=x')  split on FIRST sep, always 3-tuple
+"a.b.c".rsplit(".", 1)        # ['a.b', 'c']            split from the right, limited
+"a,b,,c".split(",")           # ['a', 'b', '', 'c']     keeps empty fields
+"unhappy".removeprefix("un")  # "happy"   (3.9+)
+"test.py".removesuffix(".py") # "test"    (3.9+)
+s.replace("-", "_")           # replace ALL occurrences (or pass a count)
+```
+
+> **PITFALL:** `find` returns `-1` when absent, but `index` raises `ValueError`.
+> Pick deliberately: `-1` silently becomes a valid-looking index if you forget to
+> check it.
+
+> **TRICK:** `partition` / `rpartition` are safer than `split(sep, 1)` for
+> "split on first/last delimiter" because they always return three parts even
+> when the delimiter is missing, so unpacking never fails.
+
 ## 10.3 `ord` and `chr`
 
 ```python
@@ -1817,6 +2412,18 @@ Slicing creates a new string.
 
 > **PITFALL:** Slicing inside loops or recursion can silently change complexity.
 
+Slice semantics apply to lists and strings alike. Two surprises for a Java dev:
+
+```python
+arr[start:stop:step]    # all three optional; arr[::2] every other; arr[::-1] reversed
+arr[100:200]            # returns [] — out-of-range SLICES never raise (arr[100] does)
+arr[1:2] = [9, 9, 9]    # list slice assignment can CHANGE length: [1,2,3] -> [1,9,9,9,3]
+```
+
+> **PITFALL:** Indexing (`arr[i]`) raises `IndexError` out of range, but slicing
+> (`arr[i:j]`) clamps silently and returns whatever overlaps. Do not rely on a
+> slice to signal an out-of-bounds bug.
+
 ## 10.5 Unicode
 
 Python strings are Unicode.
@@ -1837,6 +2444,27 @@ s.casefold()
 
 > **STAFF NOTE:** Most coding interviews use ASCII/lowercase assumptions. If
 > not stated, ask. Unicode correctness can change the design.
+
+## 10.6 f-String Format Specs
+
+The doc uses f-strings throughout; this is the format mini-language after the
+colon. The single most useful one for interviews is the `=` debug form.
+
+```python
+f"{x=}"          # x=42        self-documenting debug print (3.8+)
+f"{x:,}"         # 1,234,567   thousands separator
+f"{x:.2f}"       # 3.14        fixed decimals
+f"{x:.2%}"       # 42.00%      percentage
+f"{n:>5}"        # "   42"     right-align in width 5  (<, ^ = left, center)
+f"{n:05d}"       # "00042"     zero-pad to width 5
+f"{n:b}"         # "101010"    binary  (o = octal, x = hex)
+f"{n:08b}"       # "00101010"  zero-padded binary — handy for bitmask debugging
+f"{n:#x}"        # "0x2a"      hex WITH the 0x prefix
+```
+
+> **TRICK:** `print(f"{lo=}, {hi=}, {mid=}")` prints both the names and values in
+> one go. It is the fastest way to instrument a loop without writing label
+> strings by hand.
 
 ---
 
@@ -1890,6 +2518,10 @@ grid = [[0] * cols for _ in range(rows)]
 ```
 
 > **PITFALL:** Do not write `[[0] * cols] * rows`; it aliases rows.
+
+> **INTERNAL:** In Python 3, comprehension loop variables do not leak into the
+> enclosing scope (they did in Python 2). After `[x for x in nums]`, the name `x`
+> is not defined outside the comprehension. This avoids accidental shadowing.
 
 ## 11.4 Set and Dict Comprehensions
 
@@ -2032,6 +2664,30 @@ a = []
 b = []
 ```
 
+## 12.7 `+=` Mutates In Place; `+` Rebinds
+
+On a list, `+=` is `__iadd__` (in-place mutation, like `.extend`), but `a + [...]`
+builds a new list and rebinds the name. Same-looking operators, opposite
+aliasing:
+
+```python
+a = [1, 2]; b = a
+a += [3]          # in place: a and b are BOTH [1, 2, 3]
+```
+
+```python
+a = [1, 2]; b = a
+a = a + [3]       # new object: a is [1, 2, 3], b is still [1, 2]
+```
+
+> **PITFALL:** `+=` on a mutable target mutates the shared object, so every alias
+> (and the caller's variable) sees the change. `+=` on an immutable target
+> (`int`, `str`, `tuple`) rebinds instead, because it cannot mutate.
+
+> **PITFALL:** The notorious case: `t = ([1],); t[0] += [2]` raises `TypeError`
+> (the tuple slot cannot be rebound) **and yet still mutates the inner list** to
+> `[1, 2]`. The `+=` performs the in-place extend, then fails on the rebind.
+
 ---
 
 # 13. Caching and Memoization Mechanics
@@ -2108,6 +2764,25 @@ Here `self` is part of the cache key.
 > surprising memory behavior. In interviews, prefer nested cached helpers
 > inside the method.
 
+In production, the clean fix is `functools.cached_property` for per-instance
+memoized values, or a `weakref.WeakValueDictionary` cache so cached entries do
+not keep their objects alive:
+
+```python
+from functools import cached_property
+import weakref
+
+class Report:
+    @cached_property               # computed once per instance, then stored
+    def summary(self):
+        return expensive(self.data)
+
+_cache: "weakref.WeakValueDictionary[int, Node]" = weakref.WeakValueDictionary()
+```
+
+> **STAFF NOTE:** Saying "I would use a weak-value cache so the cache does not
+> extend object lifetime" is a strong staff-level memory-management signal.
+
 ## 13.5 Cache Is for Pure Computation
 
 Do not cache functions that:
@@ -2137,6 +2812,30 @@ class Node:
 ```
 
 `self` is explicit.
+
+The two dunders you reach for most often are `__repr__` and `__str__`:
+
+```python
+class Node:
+    def __init__(self, val):
+        self.val = val
+
+    def __repr__(self):                 # unambiguous, for developers/debugging
+        return f"Node({self.val!r})"    # the !r conversion applies repr() to val
+
+    def __str__(self):                  # readable, for users/print()
+        return str(self.val)
+```
+
+```text
+__repr__  shown in the REPL, debuggers, and inside containers ([Node(1), Node(2)])
+__str__   shown by print() and str(); falls back to __repr__ if not defined
+!r in an f-string -> use the object's repr instead of str (f"{node!r}")
+```
+
+> **TIP:** In interviews, define `__repr__` (not `__str__`) on a debug helper
+> class. It is what shows up when you print a list of your objects, so it makes
+> "print the queue to see what's happening" actually useful.
 
 ## 14.2 Instance vs Class Attributes
 
@@ -2192,6 +2891,26 @@ class Entry:
     item: Any = field(compare=False)
 ```
 
+A mutable default on a dataclass field is the dataclass form of the mutable
+default-argument pitfall — and it raises at class-definition time:
+
+```python
+@dataclass
+class Bad:
+    items: list = []                          # ValueError: mutable default not allowed
+```
+
+```python
+@dataclass
+class Good:
+    items: list = field(default_factory=list) # fresh list per instance
+```
+
+> **PITFALL:** Use `field(default_factory=list)` (or `dict`, `set`, or any
+> zero-arg callable) for mutable field defaults. Unlike a plain function, a
+> dataclass refuses the bare-list version outright instead of silently sharing
+> it — but the fix is the same idea as `param=None`.
+
 ## 14.4 NamedTuple
 
 ```python
@@ -2212,6 +2931,23 @@ Rule:
 
 ```text
 If a == b, then hash(a) must equal hash(b).
+```
+
+> **PITFALL:** Defining `__eq__` on a class sets `__hash__` to `None`, making
+> instances **unhashable** — they can no longer go in a set or be dict keys. If
+> you need both custom equality and hashability, define `__hash__` too, or use
+> `@dataclass(frozen=True)` which generates a consistent pair for you.
+
+```python
+class Point:
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+
+    def __eq__(self, other):
+        return (self.x, self.y) == (other.x, other.y)
+
+    def __hash__(self):                 # required, or Point is unhashable
+        return hash((self.x, self.y))
 ```
 
 > **PITFALL:** If you define custom equality on a mutable object, making it
@@ -2428,6 +3164,15 @@ Python is the language. CPython is the most common implementation.
 
 Most interview platforms use CPython.
 
+Example:
+
+```python
+import platform
+
+print(platform.python_implementation())  # Usually "CPython"
+print(platform.python_version())         # Example: "3.11.8"
+```
+
 ## 15.2 Object Model
 
 Every Python object has:
@@ -2514,6 +3259,23 @@ Some strings may be interned, especially identifier-like strings.
 This can make `is` appear to work for strings.
 
 Do not rely on it.
+
+Bad:
+
+```python
+a = "user_id"
+b = "".join(["user", "_id"])
+
+if a is b:          # May be False even though values match.
+    ...
+```
+
+Good:
+
+```python
+if a == b:
+    ...
+```
 
 ## 15.6 List Internals
 
@@ -2641,7 +3403,23 @@ sys.setrecursionlimit(10**6)
 ```
 
 > **PITFALL:** Raising the recursion limit too high can crash the interpreter.
-> Prefer iterative code for genuinely deep structures.
+> The limit is a guard against a C-stack overflow (a hard segfault), not just a
+> Python-level error. Raising it without also growing the stack can still crash.
+
+> **TRICK:** The competitive-programming fix for genuinely deep recursion is to
+> run the work in a thread with a large stack, which sidesteps the segfault:
+
+```python
+import sys, threading
+
+sys.setrecursionlimit(1 << 25)
+threading.stack_size(256 * 1024 * 1024)   # 256 MB stack
+threading.Thread(target=main).start()
+```
+
+> **STAFF NOTE:** The cleaner answer for production or adversarial depth is to
+> convert the recursion to an explicit stack. Reserve the big-stack thread trick
+> for contest settings where rewriting is not worth the time.
 
 ---
 
@@ -2712,6 +3490,17 @@ first optimization.
 Do not contort interview code for micro-optimizations. Fix algorithmic and
 data-structure costs first.
 
+Example of a reasonable local binding only when the loop is already hot:
+
+```python
+result = []
+append = result.append
+
+for x in nums:
+    if x > 0:
+        append(x)
+```
+
 ## 16.6 Input/Output
 
 For command-line judges:
@@ -2748,6 +3537,34 @@ Class-method online judges usually do not need manual input parsing.
 | generators | streaming large data | result must be reused many times |
 | threads | I/O-bound overlap | CPU-bound pure Python speedup |
 | async | high-concurrency I/O | blocking libraries or CPU-heavy work |
+
+Examples of convenience hurting:
+
+```python
+# Bad: O(n log n) work repeated after every insert.
+arr = []
+for x in nums:
+    arr.append(x)
+    arr = sorted(arr)
+
+# Better for a priority-style need.
+import heapq
+
+heap = []
+for x in nums:
+    heapq.heappush(heap, x)
+```
+
+```python
+# Bad: copies a suffix on every iteration.
+while nums:
+    nums = nums[1:]
+
+# Better: move an index or use deque for front removal.
+i = 0
+while i < len(nums):
+    i += 1
+```
 
 > **STAFF NOTE:** "Pythonic" does not mean "use the shortest feature." It means
 > use the construct whose semantics and cost match the problem.
@@ -3024,6 +3841,28 @@ failure modes.
 | protect shared in-process state | `Lock`, `RLock`, `Condition`, `Semaphore`, `Queue` |
 | communicate safely between threads | `queue.Queue` |
 | periodic/background work | thread/process/task plus explicit shutdown |
+
+Examples:
+
+```python
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+# I/O-bound: overlap waiting on network or disk.
+with ThreadPoolExecutor(max_workers=8) as pool:
+    pages = list(pool.map(fetch_url, urls))
+
+# CPU-bound pure Python: use processes for parallel bytecode execution.
+with ProcessPoolExecutor() as pool:
+    scores = list(pool.map(score_large_item, items))
+```
+
+```python
+import asyncio
+
+async def main(urls):
+    results = await asyncio.gather(*(fetch_async(url) for url in urls))
+    return results
+```
 
 > **SAY THIS:** "In standard CPython, threads are useful for I/O-bound
 > concurrency, but not for speeding up CPU-bound Python bytecode because of the
@@ -4373,6 +5212,13 @@ abs(a - b) < 1e-9
 
 Python will not overflow automatically. If bounds matter, check manually.
 
+```python
+value = 2**63
+
+if value > 2**31 - 1:
+    raise ValueError("outside 32-bit signed integer range")
+```
+
 ## 20.19 Dict Order Is Not Sorted
 
 Dict preserves insertion order, not key order.
@@ -4387,6 +5233,13 @@ for key in sorted(d):
 ## 20.20 Set Order Is Not Stable Sorted Order
 
 Do not use set iteration for sorted output.
+
+```python
+nums = {3, 1, 2}
+
+for x in sorted(nums):
+    print(x)
+```
 
 ## 20.21 Late-Binding Closures
 
@@ -4406,6 +5259,18 @@ funcs = [lambda i=i: i for i in range(3)]
 
 If you reassign an outer variable inside a nested function, use `nonlocal`.
 
+```python
+def counter():
+    count = 0
+
+    def inc():
+        nonlocal count
+        count += 1
+        return count
+
+    return inc
+```
+
 ## 20.23 Generator Exhaustion
 
 ```python
@@ -4418,17 +5283,43 @@ list(it)  # []
 
 `zip` stops at the shortest iterable.
 
+```python
+names = ["a", "b", "c"]
+scores = [10, 20]
+
+list(zip(names, scores))  # [("a", 10), ("b", 20)]
+```
+
 ## 20.25 `range` Is Not a List
 
 Usually good. Materialize only if needed.
+
+```python
+r = range(3)
+list(r)  # [0, 1, 2]
+```
 
 ## 20.26 `sum(list_of_lists, [])`
 
 Bad flattening pattern. Use `chain.from_iterable`.
 
+```python
+from itertools import chain
+
+matrix = [[1, 2], [3, 4]]
+flat = list(chain.from_iterable(matrix))
+```
+
 ## 20.27 `bisect.insort` Is O(n)
 
 Do not mistake it for a tree insert.
+
+```python
+import bisect
+
+arr = [1, 3, 5]
+bisect.insort(arr, 4)  # search is O(log n), insertion shift is O(n)
+```
 
 ## 20.28 Cache Arguments Unhashable
 
@@ -4436,9 +5327,33 @@ Lists, dicts, and sets cannot be cache keys.
 
 Convert to tuples when needed.
 
+```python
+from functools import lru_cache
+
+@lru_cache(None)
+def solve(state):
+    return sum(state)
+
+solve(tuple([1, 2, 3]))
+```
+
 ## 20.29 Cache on Methods Includes `self`
 
 Prefer nested cached helpers in interview code.
+
+```python
+from functools import lru_cache
+
+class Solution:
+    def countWays(self, n):
+        @lru_cache(None)
+        def dp(i):
+            if i <= 1:
+                return 1
+            return dp(i - 1) + dp(i - 2)
+
+        return dp(n)
+```
 
 ## 20.30 Class-Level Mutable State
 
@@ -4496,6 +5411,33 @@ Avoid persistent mutable state unless intended.
 
 Prefer local variables inside the method.
 
+Bad:
+
+```python
+class Solution:
+    seen = set()
+
+    def containsDuplicate(self, nums):
+        for x in nums:
+            if x in self.seen:
+                return True
+            self.seen.add(x)
+        return False
+```
+
+Good:
+
+```python
+class Solution:
+    def containsDuplicate(self, nums):
+        seen = set()
+        for x in nums:
+            if x in seen:
+                return True
+            seen.add(x)
+        return False
+```
+
 ## 20.35 Over-Clever One-Liners
 
 Python allows dense code. Interviews reward readable code.
@@ -4510,6 +5452,56 @@ for x in nums:
 ```
 
 Over a deeply nested comprehension that the interviewer cannot inspect quickly.
+
+## 20.36 Vacuous Truth of `all([])`
+
+`all([])` is `True` and `any([])` is `False`. A guard built on `all(...)` over a
+possibly empty iterable can pass when you expected it to fail.
+
+```python
+all([])  # True
+any([])  # False
+```
+
+## 20.37 `bool` Is an `int`
+
+`True == 1` and `False == 0`. Booleans collapse with `0`/`1` as dict keys and
+count inside `sum`.
+
+```python
+{1: "a", True: "b"}  # {1: "b"}
+```
+
+## 20.38 Banker's Rounding
+
+`round` rounds half to even, not half up.
+
+```python
+round(0.5)  # 0
+round(2.5)  # 2
+```
+
+## 20.39 `__eq__` Removes `__hash__`
+
+Defining `__eq__` without `__hash__` makes the class unhashable.
+
+```python
+class P:
+    def __eq__(self, other): ...
+# instances can no longer be put in a set or used as dict keys
+```
+
+Define `__hash__` too, or use `@dataclass(frozen=True)`.
+
+## 20.40 `float('inf')` Contaminates Integer Math
+
+Using `float("inf")` as a sentinel promotes integer results to `float`. Use
+`sys.maxsize` to stay in `int` when type matters.
+
+## 20.41 `groupby` Groups Only Consecutive Keys
+
+`itertools.groupby` starts a new group whenever the key changes. Sort first if
+you want all equal keys grouped regardless of position.
 
 ---
 
@@ -4529,6 +5521,13 @@ Over a deeply nested comprehension that the interviewer cannot inspect quickly.
 > **SAY THIS:** "I am avoiding slicing here because it would allocate a new list
 > each time."
 
+Example interview framing:
+
+```text
+I need a FIFO queue, so I will use deque.
+append and popleft are O(1), while list.pop(0) would shift the remaining items.
+```
+
 ## 21.2 When Discussing Python vs Java
 
 > **SAY THIS:** "Python lets me express the core logic with fewer lines, but I
@@ -4538,6 +5537,14 @@ Over a deeply nested comprehension that the interviewer cannot inspect quickly.
 > **SAY THIS:** "Java has built-in tree-backed maps and sets; Python's standard
 > library does not, so ordered dynamic operations need a different plan unless
 > `sortedcontainers` is allowed."
+
+Example:
+
+```text
+In Java I might reach for TreeMap for floor/ceiling queries.
+In Python stdlib, I would either sort once and use bisect, use a heap if I only
+need min/max priority access, or confirm that sortedcontainers is available.
+```
 
 ## 21.3 When Asked About Complexity
 
@@ -4570,17 +5577,46 @@ Python handles it
 > **SAY THIS:** "Strings are immutable, so repeated concatenation can allocate
 > many intermediate strings. I would collect parts and join once."
 
+Example:
+
+```text
+This list stores references, not inline objects. Keeping many tiny custom
+objects can cost more memory than a compact tuple or list representation.
+```
+
 ## 21.5 When You Need a Non-Standard Library
 
 > **SAY THIS:** "If `sortedcontainers` is allowed, this is straightforward with
 > a sorted list or sorted dict. If not, I would avoid assuming it and choose a
 > standard-library design."
 
+Example:
+
+```python
+# If external libraries are not guaranteed, avoid:
+# from sortedcontainers import SortedList
+
+import bisect
+
+arr = []
+bisect.insort(arr, value)  # Fine for small n; not a tree replacement.
+```
+
 ## 21.6 When Recursion Might Fail
 
 > **SAY THIS:** "The recursive version is clean, but Python has a recursion
 > limit. If depth can be large, I would use an explicit stack rather than just
 > raising the recursion limit."
+
+Example:
+
+```python
+stack = [root]
+while stack:
+    node = stack.pop()
+    for child in node.children:
+        stack.append(child)
+```
 
 ---
 
@@ -4590,12 +5626,12 @@ Python handles it
 
 ```python
 from collections import defaultdict, Counter, deque, OrderedDict
-from heapq import heappush, heappop, heappushpop, heapreplace, heapify, nlargest, nsmallest
+from heapq import heappush, heappop, heappushpop, heapreplace, heapify, merge, nlargest, nsmallest
 from bisect import bisect_left, bisect_right, insort
-from functools import cache, lru_cache, cmp_to_key
-from itertools import count, chain, product, pairwise, accumulate
+from functools import cache, lru_cache, cmp_to_key, reduce, total_ordering
+from itertools import count, chain, product, pairwise, accumulate, groupby, zip_longest, permutations, combinations
 from operator import itemgetter, attrgetter
-from math import inf, gcd, lcm, isqrt
+from math import inf, gcd, lcm, isqrt, comb, perm, isclose
 from threading import Lock, RLock, Event, Semaphore, Condition
 from queue import Queue
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
@@ -4627,6 +5663,25 @@ from dataclasses import dataclass, field
 | async network concurrency | `asyncio` |
 | shared thread state | `Lock` / `Queue` |
 
+Example choices:
+
+```python
+from collections import Counter, defaultdict, deque
+import heapq
+
+q = deque()
+q.append(start)
+node = q.popleft()                 # queue
+
+freq = Counter(nums)               # frequency
+groups = defaultdict(list)         # grouping
+groups[key].append(value)
+
+heap = []
+heapq.heappush(heap, (priority, item))
+priority, item = heapq.heappop(heap)
+```
+
 ## 22.3 Complexity Must-Know
 
 ```text
@@ -4647,7 +5702,29 @@ string slice length k            O(k)
 string join total length n       O(n)
 ```
 
-## 22.4 Night-Before Pitfall Scan
+## 22.4 One-Line Idiom Recall
+
+```python
+r, c = divmod(idx, cols)                 # flat index -> grid coordinate
+cols = list(zip(*grid))                  # transpose / unzip
+pre  = list(accumulate(nums, initial=0)) # prefix sums with leading 0
+top  = -heappop(h)                       # max-heap via negation
+heappush(h, (prio, next(counter), obj))  # heap with safe tie-break
+g.setdefault(k, []).append(v)            # group without defaultdict
+while (x := next_value()):               # assign-and-test
+x & -x                                   # lowest set bit
+x & (x - 1)                              # clear lowest set bit
+sub = (sub - 1) & mask                   # enumerate submasks
+int("ff", 16); bin(x); format(x, "b")    # base conversions
+sum(1 for x in xs if ok(x))              # count by predicate
+i = bisect_right(a, x) - 1               # floor index (largest a[i] <= x)
+i = bisect_left(a, x)                    # ceiling index (smallest a[i] >= x)
+w = deque(maxlen=k)                      # auto-evicting sliding window
+sorted(xs, key=lambda v: (v is None, v)) # sort with None pushed to the end
+merged = {**d1, **d2}                    # merge dicts (right side wins)
+```
+
+## 22.5 Night-Before Pitfall Scan
 
 ```text
 Did I use list.pop(0)?
@@ -4675,11 +5752,74 @@ Did I hold a lock while doing blocking I/O?
 Did I use threads for CPU-bound speedup in normal CPython?
 Did process-pool work require unpicklable functions or arguments?
 Did async code call blocking functions on the event loop?
+Did all([]) / any([]) on an empty iterable mislead a guard?
+Did I forget bool is an int (sum of bools, True as a dict key)?
+Did round() surprise me with banker's rounding?
+Did I add __eq__ but forget __hash__?
+Did float('inf') turn an integer result into a float?
+Did groupby only group consecutive keys when I wanted all of them?
+Did I compare floats with == instead of math.isclose?
+Did I use split(" ") when split() (any-whitespace, no empties) was meant?
+Did sorted() hit a TypeError from a stray None or mixed types?
+Did += on a list mutate a value the caller still aliases?
+Did a bare except: swallow KeyboardInterrupt or SystemExit?
+Did a dataclass field use a bare mutable default instead of default_factory?
+Did I forget that out-of-range slices return [] instead of raising?
 ```
 
-## 22.5 Final Rule
+## 22.6 Final Rule
 
 ```text
 Use Python to make the algorithm clear.
 Do not use Python cleverness to hide the algorithm.
 ```
+
+---
+
+# 23. Official References
+
+Authoritative sources for everything in this guide. When an interviewer or
+platform disagrees with this doc, these win.
+
+## 23.1 Core Language and Data Model
+
+- The Python Language Reference — https://docs.python.org/3/reference/
+- Data model (`__eq__`, `__hash__`, `__lt__`, dunders) — https://docs.python.org/3/reference/datamodel.html
+- Assignment expressions (walrus `:=`), PEP 572 — https://peps.python.org/pep-0572/
+- Built-in functions — https://docs.python.org/3/library/functions.html
+- Built-in types (list, dict, set, str, int, float) — https://docs.python.org/3/library/stdtypes.html
+
+## 23.2 Standard Library Modules Used Here
+
+- `collections` (deque, Counter, defaultdict, OrderedDict) — https://docs.python.org/3/library/collections.html
+- `heapq` — https://docs.python.org/3/library/heapq.html
+- `bisect` — https://docs.python.org/3/library/bisect.html
+- `functools` (cache, lru_cache, reduce, total_ordering) — https://docs.python.org/3/library/functools.html
+- `itertools` (accumulate, groupby, product, pairwise, zip_longest) — https://docs.python.org/3/library/itertools.html
+- `math` (isqrt, comb, perm, gcd, lcm, isclose, inf) — https://docs.python.org/3/library/math.html
+- `dataclasses` — https://docs.python.org/3/library/dataclasses.html
+- `operator` (itemgetter, attrgetter) — https://docs.python.org/3/library/operator.html
+
+## 23.3 Concurrency
+
+- `threading` — https://docs.python.org/3/library/threading.html
+- `concurrent.futures` — https://docs.python.org/3/library/concurrent.futures.html
+- `multiprocessing` — https://docs.python.org/3/library/multiprocessing.html
+- `asyncio` — https://docs.python.org/3/library/asyncio.html
+- `queue` — https://docs.python.org/3/library/queue.html
+- The GIL, from the CPython design FAQ — https://docs.python.org/3/faq/library.html#can-t-we-get-rid-of-the-global-interpreter-lock
+
+## 23.4 Performance and Internals
+
+- TimeComplexity of built-in operations (community wiki) — https://wiki.python.org/moin/TimeComplexity
+- Sorting HOW TO (key, stability, Timsort) — https://docs.python.org/3/howto/sorting.html
+- `sys` (recursion limit, maxsize, getrefcount) — https://docs.python.org/3/library/sys.html
+- `gc` and `weakref` — https://docs.python.org/3/library/gc.html and https://docs.python.org/3/library/weakref.html
+
+## 23.5 Third-Party (Confirm Availability First)
+
+- `sortedcontainers` (SortedList, SortedDict, SortedSet) — https://grantjenks.com/docs/sortedcontainers/
+
+> **STAFF NOTE:** Knowing where the answer lives is itself a senior signal. If
+> asked something you are unsure about, naming the authoritative source and your
+> reasoning beats guessing confidently.
