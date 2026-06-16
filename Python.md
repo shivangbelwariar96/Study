@@ -63,10 +63,11 @@ Callouts are used consistently:
 16. [Performance and Memory Rules](#16-performance-and-memory-rules)
 17. [Production Python: OOP, Context Managers, Decorators, and Generators](#17-production-python-oop-context-managers-decorators-and-generators)
 18. [Concurrency: Threads, Locks, Processes, and Asyncio](#18-concurrency-threads-locks-processes-and-asyncio)
-19. [The Complete Pitfall Catalog](#19-the-complete-pitfall-catalog)
-20. [Staff-Level Python Communication](#20-staff-level-python-communication)
-21. [Final Cheat Sheets](#21-final-cheat-sheets)
-22. [Official References](#22-official-references)
+19. [Correct vs Pitfall Example Bank](#19-correct-vs-pitfall-example-bank)
+20. [The Complete Pitfall Catalog](#20-the-complete-pitfall-catalog)
+21. [Staff-Level Python Communication](#21-staff-level-python-communication)
+22. [Final Cheat Sheets](#22-final-cheat-sheets)
+23. [Official References](#23-official-references)
 
 ---
 
@@ -3286,9 +3287,854 @@ Is observability present for queue depth, latency, failures, and saturation?
 
 ---
 
-# 19. The Complete Pitfall Catalog
+# 19. Correct vs Pitfall Example Bank
 
-## 19.1 Mutable Default Arguments
+This section is designed for fast review. Each example shows:
+
+```text
+bad code
+correct code
+why it matters
+what to say in an interview
+```
+
+The examples are Python-focused. They are not full algorithm problem solutions.
+
+## 19.1 Queue: `list.pop(0)` vs `deque.popleft`
+
+Bad:
+
+```python
+q = [start]
+
+while q:
+    item = q.pop(0)
+```
+
+Correct:
+
+```python
+from collections import deque
+
+q = deque([start])
+
+while q:
+    item = q.popleft()
+```
+
+Why:
+
+```text
+list.pop(0) shifts all remaining elements, so it is O(n).
+deque.popleft() is O(1).
+```
+
+> **SAY THIS:** "I am using `deque` because this is queue behavior; list front
+> removal would add a hidden O(n) cost per pop."
+
+## 19.2 2D List Initialization
+
+Bad:
+
+```python
+grid = [[0] * cols] * rows
+grid[0][0] = 1
+```
+
+All rows share the same inner list.
+
+Correct:
+
+```python
+grid = [[0] * cols for _ in range(rows)]
+grid[0][0] = 1
+```
+
+Why:
+
+```text
+List multiplication copies references, not nested objects.
+The comprehension creates a fresh inner list for each row.
+```
+
+## 19.3 Mutable Default Argument
+
+Bad:
+
+```python
+def add_item(x, items=[]):
+    items.append(x)
+    return items
+```
+
+Correct:
+
+```python
+def add_item(x, items=None):
+    if items is None:
+        items = []
+    items.append(x)
+    return items
+```
+
+Why:
+
+```text
+Default arguments are evaluated once at function definition time.
+The bad version shares one list across calls.
+```
+
+## 19.4 Sentinel Instead of Truthiness
+
+Bad:
+
+```python
+value = d.get(key)
+
+if not value:
+    value = compute_default()
+```
+
+This treats `0`, `False`, and `""` as missing.
+
+Correct:
+
+```python
+MISSING = object()
+
+value = d.get(key, MISSING)
+if value is MISSING:
+    value = compute_default()
+```
+
+Why:
+
+```text
+Truthiness is not the same as missingness.
+A private sentinel preserves valid falsy values.
+```
+
+## 19.5 `is` vs `==`
+
+Bad:
+
+```python
+if x is 1000:
+    ...
+```
+
+Correct:
+
+```python
+if x == 1000:
+    ...
+```
+
+Also correct for identity:
+
+```python
+if node is None:
+    ...
+```
+
+Why:
+
+```text
+`is` checks object identity.
+`==` checks value equality.
+CPython small-int caching can make the bad version appear to work.
+```
+
+## 19.6 Sorting: `sort()` Return Value
+
+Bad:
+
+```python
+nums = nums.sort()
+```
+
+Correct:
+
+```python
+nums.sort()
+```
+
+Or:
+
+```python
+nums = sorted(nums)
+```
+
+Why:
+
+```text
+list.sort() sorts in place and returns None.
+sorted() returns a new sorted list.
+```
+
+## 19.7 Slicing in a Hot Path
+
+Bad:
+
+```python
+while arr:
+    head = arr[0]
+    arr = arr[1:]
+```
+
+Correct:
+
+```python
+i = 0
+
+while i < len(arr):
+    head = arr[i]
+    i += 1
+```
+
+Why:
+
+```text
+arr[1:] creates a new list each time.
+Passing indices or moving a pointer avoids repeated copies.
+```
+
+> **SAY THIS:** "I am avoiding slicing here because each slice allocates and
+> copies; an index keeps the loop linear."
+
+## 19.8 String Building
+
+Bad:
+
+```python
+s = ""
+
+for part in parts:
+    s += part
+```
+
+Correct:
+
+```python
+s = "".join(parts)
+```
+
+Or when transforming:
+
+```python
+out = []
+
+for part in parts:
+    out.append(transform(part))
+
+s = "".join(out)
+```
+
+Why:
+
+```text
+Strings are immutable.
+Repeated concatenation can create many intermediate strings.
+```
+
+## 19.9 Heap Tie-Breaker
+
+Bad:
+
+```python
+heappush(heap, (priority, obj))
+```
+
+Correct:
+
+```python
+from itertools import count
+
+counter = count()
+heappush(heap, (priority, next(counter), obj))
+```
+
+Why:
+
+```text
+Tuple comparison moves to the next field when priorities tie.
+If obj is not orderable, the heap operation can crash.
+The counter makes every heap record comparable without comparing obj.
+```
+
+## 19.10 `defaultdict` Auto-Creation
+
+Bad:
+
+```python
+from collections import defaultdict
+
+groups = defaultdict(list)
+
+if groups[key]:
+    ...
+```
+
+This creates `key` even if it was absent.
+
+Correct:
+
+```python
+if key in groups:
+    ...
+```
+
+Or:
+
+```python
+items = groups.get(key, [])
+```
+
+Why:
+
+```text
+Accessing a missing defaultdict key mutates the dictionary.
+That can corrupt logic based on key presence or dictionary size.
+```
+
+## 19.11 `Counter` Zero Counts
+
+Bad:
+
+```python
+freq[x] -= 1
+
+if len(freq) == expected:
+    ...
+```
+
+Correct:
+
+```python
+freq[x] -= 1
+
+if freq[x] == 0:
+    del freq[x]
+```
+
+Why:
+
+```text
+Counter can keep keys with zero or negative counts.
+If len(freq) means active distinct keys, delete zero-count entries.
+```
+
+## 19.12 Cache With Unhashable State
+
+Bad:
+
+```python
+from functools import cache
+
+@cache
+def f(state):
+    ...
+
+f([1, 2, 3])
+```
+
+Correct:
+
+```python
+@cache
+def f(state):
+    ...
+
+f((1, 2, 3))
+```
+
+Why:
+
+```text
+cache keys are function arguments.
+Arguments must be hashable.
+Lists are mutable and unhashable; tuples are hashable if their contents are.
+```
+
+## 19.13 Method Cache Trap
+
+Risky:
+
+```python
+class Service:
+    @lru_cache(None)
+    def compute(self, key):
+        ...
+```
+
+Often better:
+
+```python
+class Service:
+    def compute_all(self, keys):
+        @lru_cache(None)
+        def compute_one(key):
+            ...
+
+        return [compute_one(key) for key in keys]
+```
+
+Why:
+
+```text
+Decorating a method includes self in the cache key.
+That can keep instances alive and create surprising cache lifetime.
+Nested cached helpers keep cache lifetime scoped to one operation.
+```
+
+## 19.14 Integer Division
+
+Bad when truncation toward zero is required:
+
+```python
+result = a // b
+```
+
+Correct:
+
+```python
+sign = -1 if (a < 0) ^ (b < 0) else 1
+result = sign * (abs(a) // abs(b))
+```
+
+Why:
+
+```text
+Python // floors toward negative infinity.
+Java integer division truncates toward zero.
+```
+
+## 19.15 `or` Defaults With Valid Zero
+
+Bad:
+
+```python
+limit = user_limit or 100
+```
+
+Correct:
+
+```python
+limit = 100 if user_limit is None else user_limit
+```
+
+Why:
+
+```text
+0 is falsy but may be a valid configured limit.
+Use an explicit None check for missingness.
+```
+
+## 19.16 Context Manager Cleanup
+
+Bad:
+
+```python
+f = open(path)
+data = f.read()
+f.close()
+```
+
+If `read()` raises, `close()` may not run.
+
+Correct:
+
+```python
+with open(path) as f:
+    data = f.read()
+```
+
+Why:
+
+```text
+The context manager guarantees cleanup even when an exception occurs.
+```
+
+## 19.17 Custom Context Manager Exception Handling
+
+Risky:
+
+```python
+class Manager:
+    def __exit__(self, exc_type, exc, tb):
+        return True
+```
+
+Correct by default:
+
+```python
+class Manager:
+    def __exit__(self, exc_type, exc, tb):
+        cleanup()
+        return False
+```
+
+Why:
+
+```text
+Returning True suppresses exceptions.
+Most resource managers should cleanup and let exceptions propagate.
+```
+
+## 19.18 Decorator Metadata
+
+Bad:
+
+```python
+def traced(func):
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+```
+
+Correct:
+
+```python
+from functools import wraps
+
+def traced(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+```
+
+Why:
+
+```text
+wraps preserves function name, docstring, annotations, and metadata.
+This matters for debugging, observability, introspection, and frameworks.
+```
+
+## 19.19 Generator Reuse
+
+Bad:
+
+```python
+values = (x * x for x in nums)
+
+total = sum(values)
+again = list(values)
+```
+
+`again` is empty.
+
+Correct:
+
+```python
+values = [x * x for x in nums]
+
+total = sum(values)
+again = list(values)
+```
+
+Or recreate the generator:
+
+```python
+def squares(nums):
+    for x in nums:
+        yield x * x
+```
+
+Why:
+
+```text
+Generators are one-shot iterators.
+Use a list when you need reuse.
+Use a generator when you need streaming.
+```
+
+## 19.20 Mutable Class Attribute
+
+Bad:
+
+```python
+class Registry:
+    items = []
+```
+
+Correct:
+
+```python
+class Registry:
+    def __init__(self):
+        self.items = []
+```
+
+Why:
+
+```text
+Class attributes are shared by all instances.
+Instance attributes belong to each object.
+```
+
+## 19.21 Mutable Object as Hash Key
+
+Bad design:
+
+```python
+class User:
+    def __init__(self, email):
+        self.email = email
+
+    def __hash__(self):
+        return hash(self.email)
+
+    def __eq__(self, other):
+        return self.email == other.email
+```
+
+Then:
+
+```python
+u = User("a@example.com")
+seen = {u}
+u.email = "b@example.com"
+```
+
+Correct options:
+
+```python
+@dataclass(frozen=True)
+class UserKey:
+    email: str
+```
+
+Or use immutable key directly:
+
+```python
+seen = {user.email}
+```
+
+Why:
+
+```text
+If an object's hash changes after insertion into a set/dict, lookup behavior is
+broken.
+Hashable keys should be immutable with respect to equality/hash fields.
+```
+
+## 19.22 Lock Around Shared State
+
+Bad:
+
+```python
+count = 0
+
+def increment():
+    global count
+    count += 1
+```
+
+Correct:
+
+```python
+from threading import Lock
+
+count = 0
+lock = Lock()
+
+def increment():
+    global count
+    with lock:
+        count += 1
+```
+
+Why:
+
+```text
+The GIL does not make multi-step shared-state invariants safe.
+Use locks or avoid shared mutable state.
+```
+
+## 19.23 Producer/Consumer Queue
+
+Risky:
+
+```python
+items = []  # shared between threads
+```
+
+Correct:
+
+```python
+from queue import Queue
+
+q = Queue()
+q.put(item)
+item = q.get()
+q.task_done()
+```
+
+Why:
+
+```text
+Queue provides thread-safe coordination.
+Manual list sharing needs explicit locking and condition signaling.
+```
+
+## 19.24 Do Not Hold Locks During Blocking I/O
+
+Bad:
+
+```python
+with lock:
+    data = fetch_from_network()
+    cache[key] = data
+```
+
+Better shape:
+
+```python
+data = fetch_from_network()
+
+with lock:
+    cache[key] = data
+```
+
+Why:
+
+```text
+Holding locks during slow I/O increases contention and deadlock risk.
+Keep critical sections small.
+```
+
+## 19.25 Thread Pool Exceptions
+
+Bad:
+
+```python
+with ThreadPoolExecutor() as executor:
+    for item in items:
+        executor.submit(work, item)
+```
+
+Exceptions may be hidden if futures are ignored.
+
+Correct:
+
+```python
+with ThreadPoolExecutor() as executor:
+    futures = [executor.submit(work, item) for item in items]
+
+    for future in as_completed(futures):
+        result = future.result()
+```
+
+Why:
+
+```text
+future.result() re-raises worker exceptions.
+Ignoring futures can hide failures.
+```
+
+## 19.26 Process Pool Pickling
+
+Bad:
+
+```python
+def run(items):
+    helper = lambda x: x + 1
+
+    with ProcessPoolExecutor() as executor:
+        return list(executor.map(helper, items))
+```
+
+Correct:
+
+```python
+def helper(x):
+    return x + 1
+
+def run(items):
+    with ProcessPoolExecutor() as executor:
+        return list(executor.map(helper, items))
+```
+
+Why:
+
+```text
+Process pools send work to child processes.
+Functions and arguments generally need to be picklable.
+Top-level functions are safer than lambdas or local functions.
+```
+
+## 19.27 Async Blocking Call
+
+Bad:
+
+```python
+async def handler():
+    time.sleep(1)
+    return "done"
+```
+
+Correct:
+
+```python
+async def handler():
+    await asyncio.sleep(1)
+    return "done"
+```
+
+Why:
+
+```text
+Blocking calls inside async code block the event loop.
+Use async-compatible APIs or move blocking work to an executor.
+```
+
+## 19.28 Clean One-Liner vs Too Clever
+
+Acceptable:
+
+```python
+names = [user.name for user in users if user.active]
+```
+
+Too clever:
+
+```python
+result = {k: [f(x) for x in v if g(x)] for k, v in data.items() if h(k, v)}
+```
+
+Often clearer:
+
+```python
+result = {}
+
+for key, values in data.items():
+    if not h(key, values):
+        continue
+
+    kept = []
+    for value in values:
+        if g(value):
+            kept.append(f(value))
+
+    result[key] = kept
+```
+
+Why:
+
+```text
+Comprehensions are great for simple transforms.
+Nested business logic should be readable and debuggable.
+```
+
+> **STAFF NOTE:** Great Python is not maximal compression. Great Python makes
+> cost, ownership, and correctness obvious.
+
+---
+
+# 20. The Complete Pitfall Catalog
+
+## 20.1 Mutable Default Arguments
 
 Bad:
 
@@ -3305,7 +4151,7 @@ def f(path=None):
         path = []
 ```
 
-## 19.2 Aliased 2D Lists
+## 20.2 Aliased 2D Lists
 
 Bad:
 
@@ -3319,7 +4165,7 @@ Good:
 grid = [[0] * cols for _ in range(rows)]
 ```
 
-## 19.3 List Used as Queue
+## 20.3 List Used as Queue
 
 Bad:
 
@@ -3335,7 +4181,7 @@ from collections import deque
 item = q.popleft()
 ```
 
-## 19.4 Slicing in Hot Paths
+## 20.4 Slicing in Hot Paths
 
 Bad:
 
@@ -3347,7 +4193,7 @@ inside a large loop.
 
 Prefer indices or views via boundaries.
 
-## 19.5 String Concatenation in a Loop
+## 20.5 String Concatenation in a Loop
 
 Bad:
 
@@ -3367,7 +4213,7 @@ then:
 s = "".join(parts)
 ```
 
-## 19.6 `sort()` Returns `None`
+## 20.6 `sort()` Returns `None`
 
 Bad:
 
@@ -3381,7 +4227,7 @@ Good:
 arr.sort()
 ```
 
-## 19.7 `is` vs `==`
+## 20.7 `is` vs `==`
 
 Bad:
 
@@ -3397,7 +4243,7 @@ if x == 1000:
     ...
 ```
 
-## 19.8 Division with Negatives
+## 20.8 Division with Negatives
 
 ```python
 -7 // 2  # -4
@@ -3405,7 +4251,7 @@ if x == 1000:
 
 If you need truncation toward zero, implement it explicitly.
 
-## 19.9 `/` Produces Float
+## 20.9 `/` Produces Float
 
 ```python
 6 / 2  # 3.0
@@ -3413,7 +4259,7 @@ If you need truncation toward zero, implement it explicitly.
 
 Use `//` for integer indices.
 
-## 19.10 Modifying While Iterating
+## 20.10 Modifying While Iterating
 
 Bad:
 
@@ -3429,7 +4275,7 @@ Good:
 arr = [x for x in arr if not bad(x)]
 ```
 
-## 19.11 Dict Mutation During Iteration
+## 20.11 Dict Mutation During Iteration
 
 Bad:
 
@@ -3445,7 +4291,7 @@ for key in list(d):
     del d[key]
 ```
 
-## 19.12 Assignment Is Aliasing
+## 20.12 Assignment Is Aliasing
 
 ```python
 b = a
@@ -3453,7 +4299,7 @@ b = a
 
 does not copy.
 
-## 19.13 Heap Tie Comparisons
+## 20.13 Heap Tie Comparisons
 
 Bad:
 
@@ -3467,7 +4313,7 @@ Good:
 heappush(heap, (priority, next(counter), obj))
 ```
 
-## 19.14 `Counter` Zero Counts
+## 20.14 `Counter` Zero Counts
 
 ```python
 freq[x] -= 1
@@ -3482,7 +4328,7 @@ if freq[x] == 0:
     del freq[x]
 ```
 
-## 19.15 `defaultdict` Auto-Creation
+## 20.15 `defaultdict` Auto-Creation
 
 ```python
 d = defaultdict(list)
@@ -3491,7 +4337,7 @@ d[key]
 
 creates `key`.
 
-## 19.16 Truthiness of Valid Values
+## 20.16 Truthiness of Valid Values
 
 ```python
 if not index:
@@ -3507,7 +4353,7 @@ if index is None:
     ...
 ```
 
-## 19.17 Float Equality
+## 20.17 Float Equality
 
 Bad:
 
@@ -3523,11 +4369,11 @@ Good:
 abs(a - b) < 1e-9
 ```
 
-## 19.18 Integer Overflow Assumptions
+## 20.18 Integer Overflow Assumptions
 
 Python will not overflow automatically. If bounds matter, check manually.
 
-## 19.19 Dict Order Is Not Sorted
+## 20.19 Dict Order Is Not Sorted
 
 Dict preserves insertion order, not key order.
 
@@ -3538,11 +4384,11 @@ for key in sorted(d):
     ...
 ```
 
-## 19.20 Set Order Is Not Stable Sorted Order
+## 20.20 Set Order Is Not Stable Sorted Order
 
 Do not use set iteration for sorted output.
 
-## 19.21 Late-Binding Closures
+## 20.21 Late-Binding Closures
 
 Bad:
 
@@ -3556,11 +4402,11 @@ Good:
 funcs = [lambda i=i: i for i in range(3)]
 ```
 
-## 19.22 `nonlocal` Missing
+## 20.22 `nonlocal` Missing
 
 If you reassign an outer variable inside a nested function, use `nonlocal`.
 
-## 19.23 Generator Exhaustion
+## 20.23 Generator Exhaustion
 
 ```python
 it = map(int, ["1", "2"])
@@ -3568,33 +4414,33 @@ list(it)  # [1, 2]
 list(it)  # []
 ```
 
-## 19.24 `zip` Truncation
+## 20.24 `zip` Truncation
 
 `zip` stops at the shortest iterable.
 
-## 19.25 `range` Is Not a List
+## 20.25 `range` Is Not a List
 
 Usually good. Materialize only if needed.
 
-## 19.26 `sum(list_of_lists, [])`
+## 20.26 `sum(list_of_lists, [])`
 
 Bad flattening pattern. Use `chain.from_iterable`.
 
-## 19.27 `bisect.insort` Is O(n)
+## 20.27 `bisect.insort` Is O(n)
 
 Do not mistake it for a tree insert.
 
-## 19.28 Cache Arguments Unhashable
+## 20.28 Cache Arguments Unhashable
 
 Lists, dicts, and sets cannot be cache keys.
 
 Convert to tuples when needed.
 
-## 19.29 Cache on Methods Includes `self`
+## 20.29 Cache on Methods Includes `self`
 
 Prefer nested cached helpers in interview code.
 
-## 19.30 Class-Level Mutable State
+## 20.30 Class-Level Mutable State
 
 Bad:
 
@@ -3611,7 +4457,7 @@ class C:
         self.items = []
 ```
 
-## 19.31 Boolean `or` Defaults
+## 20.31 Boolean `or` Defaults
 
 Bad when `0` is valid:
 
@@ -3625,13 +4471,13 @@ Good:
 limit = 10 if user_limit is None else user_limit
 ```
 
-## 19.32 NaN
+## 20.32 NaN
 
 ```python
 float("nan") != float("nan")
 ```
 
-## 19.33 Shadowing Built-ins
+## 20.33 Shadowing Built-ins
 
 Avoid:
 
@@ -3643,14 +4489,14 @@ sum = 0
 
 You lose access to the built-in name.
 
-## 19.34 Leaking State Across Test Cases
+## 20.34 Leaking State Across Test Cases
 
 On online judges, the same `Solution` instance behavior varies by platform.
 Avoid persistent mutable state unless intended.
 
 Prefer local variables inside the method.
 
-## 19.35 Over-Clever One-Liners
+## 20.35 Over-Clever One-Liners
 
 Python allows dense code. Interviews reward readable code.
 
@@ -3667,9 +4513,9 @@ Over a deeply nested comprehension that the interviewer cannot inspect quickly.
 
 ---
 
-# 20. Staff-Level Python Communication
+# 21. Staff-Level Python Communication
 
-## 20.1 When Choosing a Data Structure
+## 21.1 When Choosing a Data Structure
 
 > **SAY THIS:** "I am using a dict here because I need average O(1) lookup, and
 > the O(n) extra space is the tradeoff."
@@ -3683,7 +4529,7 @@ Over a deeply nested comprehension that the interviewer cannot inspect quickly.
 > **SAY THIS:** "I am avoiding slicing here because it would allocate a new list
 > each time."
 
-## 20.2 When Discussing Python vs Java
+## 21.2 When Discussing Python vs Java
 
 > **SAY THIS:** "Python lets me express the core logic with fewer lines, but I
 > need to be careful about hidden copies, object overhead, recursion depth, and
@@ -3693,7 +4539,7 @@ Over a deeply nested comprehension that the interviewer cannot inspect quickly.
 > library does not, so ordered dynamic operations need a different plan unless
 > `sortedcontainers` is allowed."
 
-## 20.3 When Asked About Complexity
+## 21.3 When Asked About Complexity
 
 Be specific:
 
@@ -3712,7 +4558,7 @@ Do not say:
 Python handles it
 ```
 
-## 20.4 When Asked About Internals
+## 21.4 When Asked About Internals
 
 > **SAY THIS:** "A Python list is a dynamic array of references, so append is
 > amortized O(1), but inserting or deleting near the front shifts references and
@@ -3724,13 +4570,13 @@ Python handles it
 > **SAY THIS:** "Strings are immutable, so repeated concatenation can allocate
 > many intermediate strings. I would collect parts and join once."
 
-## 20.5 When You Need a Non-Standard Library
+## 21.5 When You Need a Non-Standard Library
 
 > **SAY THIS:** "If `sortedcontainers` is allowed, this is straightforward with
 > a sorted list or sorted dict. If not, I would avoid assuming it and choose a
 > standard-library design."
 
-## 20.6 When Recursion Might Fail
+## 21.6 When Recursion Might Fail
 
 > **SAY THIS:** "The recursive version is clean, but Python has a recursion
 > limit. If depth can be large, I would use an explicit stack rather than just
@@ -3738,9 +4584,9 @@ Python handles it
 
 ---
 
-# 21. Final Cheat Sheets
+# 22. Final Cheat Sheets
 
-## 21.1 Imports
+## 22.1 Imports
 
 ```python
 from collections import defaultdict, Counter, deque, OrderedDict
@@ -3757,7 +4603,7 @@ from contextlib import contextmanager, ExitStack
 from dataclasses import dataclass, field
 ```
 
-## 21.2 Structure Choice
+## 22.2 Structure Choice
 
 | Need | Use |
 |---|---|
@@ -3781,7 +4627,7 @@ from dataclasses import dataclass, field
 | async network concurrency | `asyncio` |
 | shared thread state | `Lock` / `Queue` |
 
-## 21.3 Complexity Must-Know
+## 22.3 Complexity Must-Know
 
 ```text
 list index/read/write           O(1)
@@ -3801,7 +4647,7 @@ string slice length k            O(k)
 string join total length n       O(n)
 ```
 
-## 21.4 Night-Before Pitfall Scan
+## 22.4 Night-Before Pitfall Scan
 
 ```text
 Did I use list.pop(0)?
@@ -3831,10 +4677,9 @@ Did process-pool work require unpicklable functions or arguments?
 Did async code call blocking functions on the event loop?
 ```
 
-## 21.5 Final Rule
+## 22.5 Final Rule
 
 ```text
 Use Python to make the algorithm clear.
 Do not use Python cleverness to hide the algorithm.
 ```
-
