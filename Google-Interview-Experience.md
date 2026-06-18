@@ -235,3 +235,175 @@ public class DistinctIslands {
 
 ---
 
+### Problem Statement: Number of Distinct Islands II
+**Description:**
+Given an m x n binary matrix grid where 1 represents land and 0 represents water, an island is a group of 1s connected 4-directionally (horizontal or vertical).
+An island is considered to be the same as another if and only if one island can be **translated, rotated, or reflected (mirrored)** to equal the other.
+Return the number of distinct islands.
+### How the Solution Works
+To account for rotation and mirroring, we must generate all possible orientations of a shape. For any 2D coordinate (x, y), rotating it by 90-degree increments and mirroring it across axes yields exactly **8 possible transformations**:
+ 1. (x, y) - Original
+ 2. (x, -y) - Mirrored across X-axis
+ 3. (-x, y) - Mirrored across Y-axis
+ 4. (-x, -y) - Rotated 180°
+ 5. (y, x) - Mirrored across diagonal
+ 6. (y, -x) - Rotated 270°
+ 7. (-y, x) - Rotated 90°
+ 8. (-y, -x) - Mirrored across anti-diagonal
+**The Algorithm:**
+ 1. Use DFS to find all coordinates belonging to a single island.
+ 2. Generate the 8 transformed versions of this list of coordinates.
+ 3. For each transformation, **normalize** it:
+   * Sort the coordinates lexicographically so the "top-left" is always first.
+   * Subtract the first coordinate from all other coordinates so the shape is anchored at (0, 0) (removing translation differences).
+ 4. Sort the 8 normalized string/tuple representations and pick the lexicographically smallest one. This becomes the ultimate, unchangeable "canonical signature" for the shape.
+ 5. Store the canonical signature in a Hash Set. The final size of the set is the number of distinct islands.
+### Python Solution
+```python
+def numDistinctIslands2(grid: list[list[int]]) -> int:
+    if not grid or not grid[0]:
+        return 0
+
+    rows, cols = len(grid), len(grid[0])
+    unique_shapes = set()
+
+    def dfs(r, c, shape):
+        if r < 0 or r >= rows or c < 0 or c >= cols or grid[r][c] == 0:
+            return
+        
+        grid[r][c] = 0 # Mark as visited
+        shape.append((r, c))
+        
+        dfs(r + 1, c, shape)
+        dfs(r - 1, c, shape)
+        dfs(r, c + 1, shape)
+        dfs(r, c - 1, shape)
+
+    def get_canonical(shape):
+        # 8 possible transformations for each coordinate
+        shapes = [[] for _ in range(8)]
+        for x, y in shape:
+            shapes[0].append((x, y))
+            shapes[1].append((x, -y))
+            shapes[2].append((-x, y))
+            shapes[3].append((-x, -y))
+            shapes[4].append((y, x))
+            shapes[5].append((y, -x))
+            shapes[6].append((-y, x))
+            shapes[7].append((-y, -x))
+        
+        for i in range(8):
+            # Sort coordinates to normalize the iteration order
+            shapes[i].sort()
+            base_x, base_y = shapes[i][0]
+            # Translate so the starting point is at (0, 0)
+            for j in range(len(shape)):
+                shapes[i][j] = (shapes[i][j][0] - base_x, shapes[i][j][1] - base_y)
+        
+        # Sort the 8 transformations to find the lexicographically smallest one
+        shapes.sort()
+        # Return the smallest one as a tuple so it can be hashed
+        return tuple(shapes[0])
+
+    for r in range(rows):
+        for c in range(cols):
+            if grid[r][c] == 1:
+                current_shape = []
+                dfs(r, c, current_shape)
+                unique_shapes.add(get_canonical(current_shape))
+
+    return len(unique_shapes)
+
+```
+### Java Solution
+```java
+import java.util.*;
+
+public class DistinctIslands2 {
+    
+    public int numDistinctIslands2(int[][] grid) {
+        if (grid == null || grid.length == 0) return 0;
+        
+        Set<String> uniqueShapes = new HashSet<>();
+        int rows = grid.length;
+        int cols = grid[0].length;
+        
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                if (grid[r][c] == 1) {
+                    List<int[]> shape = new ArrayList<>();
+                    dfs(grid, r, c, shape);
+                    uniqueShapes.add(getCanonical(shape));
+                }
+            }
+        }
+        
+        return uniqueShapes.size();
+    }
+    
+    private void dfs(int[][] grid, int r, int c, List<int[]> shape) {
+        if (r < 0 || r >= grid.length || c < 0 || c >= grid[0].length || grid[r][c] == 0) {
+            return;
+        }
+        grid[r][c] = 0;
+        shape.add(new int[]{r, c});
+        
+        dfs(grid, r + 1, c, shape);
+        dfs(grid, r - 1, c, shape);
+        dfs(grid, r, c + 1, shape);
+        dfs(grid, r, c - 1, shape);
+    }
+    
+    private String getCanonical(List<int[]> shape) {
+        List<List<int[]>> shapes = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            shapes.add(new ArrayList<>());
+        }
+        
+        // Generate the 8 transformations
+        for (int[] p : shape) {
+            int x = p[0], y = p[1];
+            shapes.get(0).add(new int[]{x, y});
+            shapes.get(1).add(new int[]{x, -y});
+            shapes.get(2).add(new int[]{-x, y});
+            shapes.get(3).add(new int[]{-x, -y});
+            shapes.get(4).add(new int[]{y, x});
+            shapes.get(5).add(new int[]{y, -x});
+            shapes.get(6).add(new int[]{-y, x});
+            shapes.get(7).add(new int[]{-y, -x});
+        }
+        
+        List<String> representations = new ArrayList<>();
+        for (List<int[]> s : shapes) {
+            // Sort to ensure standardized order
+            Collections.sort(s, (a, b) -> a[0] == b[0] ? Integer.compare(a[1], b[1]) : Integer.compare(a[0], b[0]));
+            
+            int baseX = s.get(0)[0];
+            int baseY = s.get(0)[1];
+            
+            // Build the translation-invariant string
+            StringBuilder sb = new StringBuilder();
+            for (int[] p : s) {
+                sb.append(p[0] - baseX).append(",").append(p[1] - baseY).append(";");
+            }
+            representations.add(sb.toString());
+        }
+        
+        // Sort the string representations and pick the lexicographically smallest
+        Collections.sort(representations);
+        return representations.get(0);
+    }
+}
+
+```
+### Complexity Analysis
+ * **Time Complexity:** O(R \times C \log k)
+   * R is the number of rows and C is the number of columns.
+   * Traversing the matrix takes O(R \times C).
+   * When processing an island of size k, we apply 8 transformations and then sort the coordinates, which takes O(k \log k) time.
+   * In the worst case, the whole grid is one giant island (k = R \times C), making the upper bound of the sorting step O(R \times C \log(R \times C)).
+ * **Space Complexity:** O(R \times C)
+   * The recursion stack for the DFS can go as deep as the size of the largest island, which is bounded by O(R \times C).
+   * The set used to store the unique canonical shapes will take memory proportional to the size of all islands combined. The maximum space consumed by storing coordinates and string representations is constrained by the grid boundaries.
+
+---
